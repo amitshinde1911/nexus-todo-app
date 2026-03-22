@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Viewport: initial-scale=1, fit=cover extends content under notch/Dynamic Island -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA / Home Screen -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- black-translucent allows content behind status bar (safe area handles spacing) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Pro Tasks" />
+    <meta name="theme-color" content="#F5F6F8" />
+
+    <!-- Icons: PNG required for iOS home screen (SVG not supported) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+    <title>Pro Tasks</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

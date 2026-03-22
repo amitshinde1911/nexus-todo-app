@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Helper to check if the user has an admin role
+    // This assumes we have a 'users' collection where roles are stored
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // User-specific data: Tasks and Logs
+    function isValidTask() {
+      let data = request.resource.data;
+      return data.title is string && 
+             data.title.size() >= 3 && 
+             data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+      
+      match /tasks/{taskId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow create: if isAuthenticated() && isOwner(userId) && isValidTask();
+        allow update: if isAuthenticated() && isOwner(userId) && (request.resource.data.userId == resource.data.userId);
+        allow delete: if isAuthenticated() && isOwner(userId);
+      }
+      
+      match /logs/{logId} {
+        allow read, write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // Global Registry (Self-registration allowed, but admin-only modification of role)
+    match /users_global/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.isAdmin == false;
+      allow update: if isAuthenticated() && (isOwner(userId) && request.resource.data.isAdmin == resource.data.isAdmin) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Global Collections: Admin only
+    match /logs_global/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // Allow users to push logs
+      allow update, delete: if isAdmin();
+    }
+
+    match /errors/{errorId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated(); // Allow users to push errors
+      allow update, delete: if isAdmin();
+    }
+
+    match /analytics/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
