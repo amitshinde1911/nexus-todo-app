@@ -49,7 +49,7 @@ export default function DashboardPage() {
             {/* Header / Greeting */}
             <div className="flex flex-col gap-3">
                 <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                    Good Day, {user?.displayName?.split(' ')[0] || 'Achiever'}
+                    Good Day, {user?.displayName ? user.displayName.split(' ')[0] : (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'Achiever')}
                 </h1>
                 <div className="flex items-center gap-3">
                     <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">
