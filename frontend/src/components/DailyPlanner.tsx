@@ -5,15 +5,29 @@ interface DailyPlannerProps {
     todos: any[];
     selectedDate: string;
     onUpdateMetadata: (id: string, updates: Record<string, any>) => void;
+    onStartTask?: (id: string) => void;
+    onPauseTask?: (id: string) => void;
+    onStopTask?: (id: string) => void;
 }
 
-export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata }: DailyPlannerProps) {
+export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, onStartTask, onPauseTask, onStopTask }: DailyPlannerProps) {
     const hours = Array.from({ length: 15 }, (_, i) => i + 6); // 6:00 to 20:00
     const currentTime = new Date();
     const currentHour = currentTime.getHours();
     const currentMinute = currentTime.getMinutes();
+    
+    const formatTimeWithFallback = (timestamp: any) => {
+        if (!timestamp) return '';
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : (timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp));
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            return '';
+        }
+    };
 
-    const todayTodos = todos.filter(t => t.dueDate === selectedDate && !t.deleted && !t.completed);
+    const todayTodos = todos.filter(t => t.dueDate === selectedDate && !t.deleted);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, todoId: string) => {
         e.dataTransfer.setData('todoId', todoId);
@@ -41,33 +55,83 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata }: 
     
     const unassignedTasks = todayTodos.filter(t => !t.dueTime);
     const assignedTasks = todayTodos.filter(t => t.dueTime);
-    const isOverloaded = assignedTasks.length >= 8;
+    const pendingUnassigned = unassignedTasks.filter(t => !t.completed).length;
+    const isOverloaded = assignedTasks.filter(t => !t.completed).length >= 8;
 
     return (
         <div className="animate-slide-up space-y-10 pb-20">
             {/* Task Backlog */}
             {unassignedTasks.length > 0 && (
-                <div className="glass-card p-6">
+                <div className="card p-6">
                     <div className="flex justify-between items-center mb-6">
-                        <div className="flex flex-col">
-                            <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">Intentions Backlog</h3>
-                            <span className="text-[8px] text-[var(--text-secondary)]/40 uppercase tracking-widest mt-1">Drag to schedule your day</span>
+                        <div className="flex flex-col gap-1">
+                            <h3 className="text-xs font-semibold text-[var(--text-primary)] tracking-tight">Task backlog</h3>
+                            <span className="text-[11px] text-[var(--text-secondary)]">Drag tasks to the timeline to schedule your day</span>
                         </div>
-                        <span className="text-[10px] font-bold bg-white/5 px-3 py-1.5 rounded-full text-[var(--text-primary)] border border-white/5">{unassignedTasks.length} pending</span>
+                        <span className="text-[10px] font-semibold bg-gray-100 px-3 py-1 rounded-full text-[var(--text-primary)]">
+                            {pendingUnassigned} pending
+                        </span>
                     </div>
                     
                     <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                         {unassignedTasks.map(t => (
                             <div 
                                 key={t.id} 
-                                draggable 
+                                draggable={!t.completed}
                                 onDragStart={(e) => handleDragStart(e, t.id)}
-                                className="flex-shrink-0 min-w-[180px] p-5 glass rounded-[20px] cursor-grab active:cursor-grabbing hover:bg-white/10 transition-all group"
+                                className={clsx(
+                                    "flex-shrink-0 min-w-[180px] p-5 bg-white border border-[var(--border)] rounded-xl transition-all group",
+                                    !t.completed ? "cursor-grab active:cursor-grabbing hover:border-[var(--accent)]" : "opacity-60 grayscale-[0.5] border-dashed"
+                                )}
                             >
-                                <div className={clsx("w-6 h-1 rounded-full mb-3", getPriorityColor(t.priority))} />
-                                <p className="text-xs font-bold text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className={clsx("w-6 h-1 rounded-full", getPriorityColor(t.priority))} />
+                                    {t.completed ? (
+                                        <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </div>
+                                    ) : t.status === 'IN_PROGRESS' ? (
+                                        <div className="flex items-center gap-1">
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onPauseTask?.(t.id); }}
+                                                className="w-5 h-5 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center transition-all hover:bg-amber-100"
+                                                title="Pause"
+                                            >
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                                            </button>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); onStopTask?.(t.id); }}
+                                                className="w-5 h-5 rounded-full bg-red-50 text-red-500 flex items-center justify-center animate-pulse"
+                                                title="Complete"
+                                            >
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); onStartTask?.(t.id); }}
+                                            className={clsx(
+                                                "w-5 h-5 rounded-full flex items-center justify-center transition-all",
+                                                t.status === 'PAUSED' ? "bg-amber-50 text-amber-500" : "bg-gray-50 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
+                                            )}
+                                            title={t.status === 'PAUSED' ? "Resume" : "Start"}
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                        </button>
+                                    )}
+                                </div>
+                                <p className={clsx(
+                                    "text-sm font-medium leading-tight transition-colors",
+                                    t.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)] group-hover:text-[var(--accent)]"
+                                )}>
                                     {t.title}
                                 </p>
+                                {t.completed && (
+                                    <div className="flex items-center gap-1.5 mt-2 text-[10px] font-semibold text-emerald-600">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        <span>Done {formatTimeWithFallback(t.completedAt)}</span>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -75,9 +139,9 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata }: 
             )}
 
             {/* Vertical Timeline Grid */}
-            <div className="glass-card overflow-hidden">
-                <div className="px-6 py-4 bg-white/[0.02] border-b border-white/5">
-                    <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">Daily Timeline</h3>
+            <div className="card overflow-hidden">
+                <div className="px-6 py-4 border-b border-[var(--border)] bg-gray-50/50">
+                    <h3 className="text-xs font-semibold text-[var(--text-primary)]">Daily timeline</h3>
                 </div>
                 
                 <div className="relative">
@@ -96,10 +160,10 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata }: 
                                 )}
                             >
                                 {/* Time Label Column */}
-                                <div className="w-[80px] py-8 flex flex-col items-center justify-start border-r border-white/[0.03]">
+                                <div className="w-[80px] py-8 flex flex-col items-center justify-start border-r border-[var(--border)]">
                                     <span className={clsx(
-                                        "text-[10px] font-bold tracking-tighter transition-colors duration-300",
-                                        isCurrentHour ? "text-[var(--accent)]" : "text-[var(--text-secondary)]/30"
+                                        "text-xs font-medium transition-colors duration-300",
+                                        isCurrentHour ? "text-[var(--accent)]" : "text-[var(--text-secondary)]/40"
                                     )}>
                                         {hour.toString().padStart(2, '0')}:00
                                     </span>
@@ -111,25 +175,69 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata }: 
                                         className="absolute left-0 right-0 z-10 pointer-events-none flex items-center"
                                         style={{ top: `${(currentMinute / 60) * 100}%` }}
                                     >
-                                        <div className="w-2 h-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_rgba(108,92,231,0.8)] ml-[79px]" />
-                                        <div className="h-[1px] flex-1 bg-[var(--accent)]/40" />
+                                        <div className="w-2 h-2 rounded-full bg-[var(--accent)] ml-[79px]" />
+                                        <div className="h-[1px] flex-1 bg-[var(--accent)]/20" />
                                     </div>
                                 )}
 
                                 {/* Card Slot */}
-                                <div className="flex-1 p-3 min-h-[100px] flex flex-col gap-3 group-hover:bg-white/[0.01] transition-colors">
+                                <div className="flex-1 p-3 min-h-[100px] flex flex-col gap-2 group-hover:bg-gray-50/30 transition-colors">
                                     {hourTasks.map(t => (
                                         <div 
                                             key={t.id} 
-                                            draggable
+                                            draggable={!t.completed}
                                             onDragStart={(e) => handleDragStart(e, t.id)}
-                                            className="glass p-4 rounded-2xl flex justify-between items-center cursor-grab active:cursor-grabbing hover:bg-white/10 transition-all group/task"
+                                            className={clsx(
+                                                "bg-white border border-[var(--border)] p-4 rounded-xl flex justify-between items-center transition-all group/task",
+                                                !t.completed ? "cursor-grab active:cursor-grabbing hover:border-[var(--accent)]" : "opacity-60 bg-gray-50/50"
+                                            )}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className={clsx("w-1.5 h-1.5 rounded-full", getPriorityColor(t.priority))} />
-                                                <span className="text-xs font-bold text-[var(--text-primary)] group-hover/task:text-[var(--accent)] transition-colors">{t.title}</span>
+                                                <span className={clsx(
+                                                    "text-sm font-medium transition-colors",
+                                                    t.completed ? "text-[var(--text-secondary)] line-through" : (t.status === 'IN_PROGRESS' ? "text-[var(--accent)]" : "text-[var(--text-primary)] group-hover/task:text-[var(--accent)]")
+                                                )}>
+                                                    {t.title}
+                                                </span>
                                             </div>
-                                            <span className="text-[9px] font-black text-[var(--text-secondary)]/20 uppercase tracking-widest">{t.dueTime}</span>
+                                            <div className="flex items-center gap-3">
+                                                {t.completed ? (
+                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded text-[10px] font-semibold text-emerald-600">
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                        {formatTimeWithFallback(t.completedAt) || 'Done'}
+                                                    </div>
+                                                ) : t.status === 'IN_PROGRESS' ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); onPauseTask?.(t.id); }}
+                                                            className="w-5 h-5 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center transition-all hover:bg-amber-100"
+                                                            title="Pause"
+                                                        >
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); onStopTask?.(t.id); }}
+                                                            className="w-5 h-5 rounded-full bg-red-50 text-red-500 flex items-center justify-center animate-pulse"
+                                                            title="Complete"
+                                                        >
+                                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); onStartTask?.(t.id); }}
+                                                        className={clsx(
+                                                            "w-5 h-5 rounded-full flex items-center justify-center transition-all",
+                                                            t.status === 'PAUSED' ? "bg-amber-50 text-amber-500" : "bg-gray-50 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
+                                                        )}
+                                                        title={t.status === 'PAUSED' ? "Resume" : "Start"}
+                                                    >
+                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                                    </button>
+                                                )}
+                                                <span className="text-[10px] font-medium text-[var(--text-secondary)]/40">{t.dueTime}</span>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -142,18 +250,17 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata }: 
             {/* Status Footer */}
             <div className="flex items-center justify-center pt-4">
                 {isOverloaded ? (
-                    <div className="glass px-6 py-4 rounded-2xl border-red-500/10 flex items-center gap-4 animate-pulse">
-                        <span className="text-lg">🛑</span> 
-                        <span className="text-[10px] font-bold text-red-500/80 uppercase tracking-widest">Caution: Schedule exceeding optimal energy.</span>
+                    <div className="bg-red-50 px-6 py-4 rounded-xl border border-red-100 flex items-center gap-4">
+                        <span className="text-xl">🛑</span> 
+                        <span className="text-xs font-medium text-red-600">Careful: You have a lot scheduled for today. Take it easy!</span>
                     </div>
                 ) : (
-                    <div className="glass px-6 py-4 rounded-2xl border-[var(--accent)]/10 flex items-center gap-4">
-                        <span className="text-lg">✨</span> 
-                        <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-widest">Timeline Optimized for Peak Focus.</span>
+                    <div className="bg-white px-6 py-4 rounded-xl border border-[var(--border)] flex items-center gap-4">
+                        <span className="text-xl">✨</span> 
+                        <span className="text-xs font-medium text-[var(--text-secondary)]">Your schedule looks great! Ready to focus.</span>
                     </div>
                 )}
             </div>
         </div>
     );
 }
-

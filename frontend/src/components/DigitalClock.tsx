@@ -31,39 +31,39 @@ export default function DigitalClock() {
     const [hours, minutes, seconds] = timePart.split(':');
 
     return (
-        <div className="flex items-center gap-2 px-6 py-3 glass-card border-[var(--accent)]/10 shadow-[0_0_20px_rgba(108,92,231,0.05)] group hover:border-[var(--accent)]/30 transition-all duration-500 animate-blur-in">
+        <div className="flex items-center gap-3 px-4 py-2 bg-white border border-[var(--border)] rounded-lg transition-all duration-300">
             {/* Hour Sector */}
             <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-[var(--text-primary)] tracking-tighter drop-shadow-sm group-hover:text-[var(--accent)] transition-colors">
+                <span className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">
                     {hours}
                 </span>
-                <span className="text-[7px] font-black text-[var(--text-secondary)]/20 uppercase tracking-[0.2em]">Hours</span>
+                <span className="text-[8px] font-medium text-[var(--text-secondary)]/40">Hours</span>
             </div>
 
-            <span className="text-xl font-bold text-[var(--accent)]/30 mb-4 scale-y-110 animate-pulse text-[12px]">:</span>
+            <span className="text-sm font-medium text-[var(--text-secondary)]/20 mb-4">:</span>
 
             {/* Minute Sector */}
             <div className="flex flex-col items-center">
-                <span className="text-2xl font-black text-[var(--text-primary)] tracking-tighter drop-shadow-sm group-hover:text-[var(--accent)] transition-colors">
+                <span className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">
                     {minutes}
                 </span>
-                <span className="text-[7px] font-black text-[var(--text-secondary)]/20 uppercase tracking-[0.2em]">Minutes</span>
+                <span className="text-[8px] font-medium text-[var(--text-secondary)]/40">Minutes</span>
             </div>
 
-            <span className="text-xl font-bold text-[var(--accent)]/30 mb-4 scale-y-110 animate-pulse text-[12px]">:</span>
+            <span className="text-sm font-medium text-[var(--text-secondary)]/20 mb-4">:</span>
 
             {/* Second Sector */}
-            <div className="flex flex-col items-center min-w-[32px]">
-                <span className="text-2xl font-black text-[var(--accent)] tracking-tighter drop-shadow-[0_0_8px_rgba(108,92,231,0.3)]">
+            <div className="flex flex-col items-center min-w-[28px]">
+                <span className="text-xl font-semibold text-[var(--accent)] tracking-tight">
                     {seconds}
                 </span>
-                <span className="text-[7px] font-black text-[var(--text-secondary)]/20 uppercase tracking-[0.2em]">Seconds</span>
+                <span className="text-[8px] font-medium text-[var(--text-secondary)]/40">Seconds</span>
             </div>
 
-            {/* AM/PM Indicator - Only show current */}
+            {/* AM/PM Indicator */}
             {ampm && (
-                <div className="ml-3 px-2 py-1 bg-[var(--accent)] rounded shadow-[0_2px_8px_rgba(108,92,231,0.3)] text-white">
-                    <span className="text-[8px] font-black tracking-widest">{ampm}</span>
+                <div className="ml-2 px-1.5 py-0.5 bg-[var(--accent)] rounded text-white">
+                    <span className="text-[9px] font-semibold tracking-tight">{ampm}</span>
                 </div>
             )}
         </div>

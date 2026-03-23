@@ -14,39 +14,39 @@ export default function AdminPage() {
     }, []);
 
     return (
-        <div className="space-y-12 p-8">
+        <div className="space-y-10 p-6 md:p-10">
             <header>
-                <h1 className="text-6xl font-black text-white tracking-tighter mb-4 italic italic">COMMAND CENTER</h1>
-                <p className="text-muted-foreground text-xs font-black uppercase tracking-[0.5em] opacity-40">System-wide monitoring & activity metrics.</p>
+                <h1 className="text-3xl font-semibold text-[var(--text-primary)] tracking-tight mb-2">Admin dashboard</h1>
+                <p className="text-sm text-[var(--text-secondary)]">Monitor system activity and user actions.</p>
             </header>
 
-            <div className="bg-black/40 backdrop-blur-3xl border border-white/10 rounded-[40px] overflow-hidden">
-                <div className="p-8 border-b border-white/10 bg-white/5">
-                    <h2 className="text-sm font-black text-white uppercase tracking-widest">Real-time Telemetry</h2>
+            <div className="card overflow-hidden">
+                <div className="px-6 py-4 border-b border-[var(--border)]">
+                    <h2 className="text-sm font-semibold text-[var(--text-primary)]">Activity logs</h2>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
-                            <tr className="border-b border-white/5 bg-black/20">
-                                <th className="px-8 py-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Timestamp</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Agent</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Action</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-muted-foreground uppercase tracking-widest">Protocol Status</th>
+                            <tr className="border-b border-[var(--border)] bg-gray-50/50">
+                                <th className="px-6 py-4 text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Timestamp</th>
+                                <th className="px-6 py-4 text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">User ID</th>
+                                <th className="px-6 py-4 text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Action</th>
+                                <th className="px-6 py-4 text-[11px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Details</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-[var(--border)]">
                             {logs.map((log) => (
-                                <tr key={log.id} className="hover:bg-white/5 transition-colors group">
-                                    <td className="px-8 py-6 text-white font-mono text-xs opacity-50">
+                                <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="px-6 py-4 text-[var(--text-secondary)] font-mono text-xs">
                                         {log.timestamp?.toDate?.()?.toLocaleString() || 'N/A'}
                                     </td>
-                                    <td className="px-8 py-6 text-white text-xs font-bold">{log.userId}</td>
-                                    <td className="px-8 py-6">
-                                        <span className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
+                                    <td className="px-6 py-4 text-[var(--text-primary)] text-xs font-medium">{log.userId}</td>
+                                    <td className="px-6 py-4">
+                                        <span className="px-2 py-0.5 bg-gray-100 rounded text-[10px] font-medium text-[var(--text-primary)]">
                                             {log.action}
                                         </span>
                                     </td>
-                                    <td className="px-8 py-6 text-muted-foreground text-xs">{log.message}</td>
+                                    <td className="px-6 py-4 text-[var(--text-secondary)] text-xs">{log.message}</td>
                                 </tr>
                             ))}
                         </tbody>
