@@ -99,10 +99,33 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between px-1">
-                            <h2 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.3em]">Operational Objectives</h2>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-bold text-[var(--text-secondary)]/40 uppercase tracking-widest">{searchTerm ? 'Filtered Results' : 'All Data'}</span>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
+                            <h2 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.3em] flex items-center gap-3">
+                                <span className="w-1 h-3 bg-[var(--accent)] rounded-full" />
+                                Operational Objectives
+                            </h2>
+                            <div className="flex items-center gap-4">
+                                <div className="relative group">
+                                    <input 
+                                        type="text"
+                                        placeholder="SEARCH INTENTIONS..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest w-48 focus:w-64 focus:border-[var(--accent)]/50 transition-all outline-none placeholder:text-[var(--text-secondary)]/20"
+                                    />
+                                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]/20 group-focus-within:text-[var(--accent)] transition-colors" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                </div>
+                                <select 
+                                    value={priorityFilter}
+                                    onChange={(e) => setPriorityFilter(e.target.value)}
+                                    className="bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest outline-none focus:border-[var(--accent)]/50 transition-all cursor-pointer text-[var(--text-secondary)]/60"
+                                >
+                                    <option value="ALL">ALL LEVELS</option>
+                                    <option value="URGENT">URGENT</option>
+                                    <option value="HIGH">HIGH</option>
+                                    <option value="MEDIUM">MEDIUM</option>
+                                    <option value="LOW">LOW</option>
+                                </select>
                             </div>
                         </div>
 
@@ -136,10 +159,12 @@ export default function DashboardPage() {
                         <div>
                              <h2 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.3em] px-1 mb-6">Daily Briefing</h2>
                              <div className="glass-card p-10 border-[var(--accent)]/5 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--accent)]/5 blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                                <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--accent)]/5 blur-3xl -mr-16 -mt-16" />
+                                </div>
                                 <div className="space-y-8 relative z-10">
                                     <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 rounded-2xl glass flex items-center justify-center text-[var(--accent)]">
+                                        <div className="w-10 h-10 rounded-2xl glass flex items-center justify-center text-[var(--accent)] shadow-lg shadow-[var(--accent)]/10">
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                         </div>
                                         <div>

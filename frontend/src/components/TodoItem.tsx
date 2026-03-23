@@ -115,7 +115,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata }:
                                 onBlur={handleSaveEdit}
                                 onKeyDown={handleKeyDown}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full bg-white/5 border-none outline-none text-sm font-bold text-[var(--text-primary)] px-0 py-0 rounded-md"
+                                className="w-full bg-white/[0.03] border border-white/5 outline-none text-sm font-black text-[var(--accent)] px-3 py-1 rounded-xl transition-all"
                             />
                         ) : (
                             <span 
@@ -145,8 +145,16 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata }:
                             )}
                             
                             {subtasks.length > 0 && (
-                                <div className="flex items-center gap-1 text-[var(--accent)]/40 text-[9px] font-black tracking-widest uppercase">
-                                    {completedSubs}/{subtasks.length} Done
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-[var(--accent)] transition-all duration-500" 
+                                            style={{ width: `${(completedSubs / subtasks.length) * 100}%` }} 
+                                        />
+                                    </div>
+                                    <span className="text-[8px] font-black text-[var(--accent)]/40 uppercase tracking-widest leading-none">
+                                        {completedSubs}/{subtasks.length}
+                                    </span>
                                 </div>
                             )}
                         </div>

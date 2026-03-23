@@ -45,19 +45,22 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (email: str
 
     return (
         <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-6 selection:bg-[var(--accent-soft)] selection:text-[var(--accent)] relative overflow-hidden">
-            <div className="absolute top-10 left-10 w-[60%] h-[60%] bg-[var(--accent)] opacity-[0.03] blur-[140px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-10 right-10 w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+            {/* Nuclear Solid Background Isolation */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-10 left-10 w-[60%] h-[60%] bg-[var(--accent)] opacity-[0.03] blur-[140px] rounded-full" />
+                <div className="absolute bottom-10 right-10 w-[40%] h-[40%] bg-blue-500/5 blur-[120px] rounded-full" />
+            </div>
 
-            <div className="w-full max-w-[440px] relative animate-slide-up">
+            <div className="w-full max-w-[440px] relative z-10 animate-slide-up">
                 <div className="relative glass-card p-12 overflow-hidden group">
-                    <div className="mb-12 text-center">
-                        <h1 className="text-5xl font-bold text-[var(--text-primary)] tracking-tighter mb-4 text-center">NEXUS</h1>
-                        <p className="text-[var(--text-secondary)]/40 text-[10px] font-black uppercase tracking-[0.4em] mb-2 text-center">
-                            {isLogin ? 'Protocol Authorization' : 'New Identity Required'}
+                    <div className="mb-12 text-center pointer-events-none select-none">
+                        <h1 className="text-5xl font-black text-[var(--text-primary)] tracking-tight mb-2 uppercase italic opacity-90">NEXUS</h1>
+                        <p className="text-[var(--text-secondary)]/30 text-[9px] font-black uppercase tracking-[0.5em] mb-2">
+                            {isLogin ? 'Authorization Required' : 'Establish New Protocol'}
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-[10px] font-black text-[var(--text-secondary)]/40 uppercase tracking-[0.2em] mb-4 ml-1">Coordination Vector</label>
                             <input 
@@ -100,10 +103,11 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (email: str
                         </button>
                     </form>
 
-                    <div className="mt-12 text-center">
+                    <div className="mt-10 text-center">
                         <button 
+                            type="button"
                             onClick={() => setIsLogin(!isLogin)}
-                            className="text-[10px] font-bold text-[var(--text-secondary)]/40 hover:text-[var(--accent)] transition-colors uppercase tracking-[0.2em]"
+                            className="text-[9px] font-black text-[var(--text-secondary)]/30 hover:text-[var(--accent)] transition-all uppercase tracking-[0.3em] hover:tracking-[0.4em]"
                         >
                             {isLogin ? "Generate New Protocol Access" : "Existing Authorization Detected"}
                         </button>
