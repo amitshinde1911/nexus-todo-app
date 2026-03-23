@@ -5,6 +5,7 @@ import { formatDate } from '../utils/formatters';
 import { clsx } from '../lib/utils';
 import TaskSkeleton from '../components/TaskSkeleton';
 import TodoItem from '../components/TodoItem';
+import DigitalClock from '../components/DigitalClock';
 
 export default function DashboardPage() {
     const { user } = useAuthContext();
@@ -47,19 +48,23 @@ export default function DashboardPage() {
     return (
         <div className="space-y-12 animate-slide-up pb-20">
             {/* Header / Greeting */}
-            <div className="flex flex-col gap-3">
-                <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                    Good Day, {user?.displayName ? user.displayName.split(' ')[0] : (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'Achiever')}
-                </h1>
-                <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">
-                        {formatDate(todayStr)}
-                    </span>
-                    <div className="h-[1px] w-8 bg-white/5" />
-                    <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-[0.2em]">
-                        Focused Session Active
-                    </span>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="flex flex-col gap-3">
+                    <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
+                        Good Day, {user?.displayName ? user.displayName.split(' ')[0] : (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'Achiever')}
+                    </h1>
+                    <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">
+                            {formatDate(todayStr)}
+                        </span>
+                        <div className="h-[1px] w-8 bg-white/5" />
+                        <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-[0.2em]">
+                            Focused Session Active
+                        </span>
+                    </div>
                 </div>
+
+                <DigitalClock />
             </div>
 
             {/* Main Content Area: 2-Column Layout */}
