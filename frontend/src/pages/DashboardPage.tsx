@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useAuthContext } from '../context/AuthContext';
+import { useToast } from '../components/ToastProvider';
 import { formatDate } from '../utils/formatters';
 import { clsx } from '../lib/utils';
 import TaskSkeleton from '../components/TaskSkeleton';
@@ -13,6 +14,9 @@ export default function DashboardPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [priorityFilter, setPriorityFilter] = useState('ALL');
+    const [filterMode, setFilterMode] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
+
+    const { success } = useToast() || {};
 
     const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
@@ -32,8 +36,27 @@ export default function DashboardPage() {
         if (priorityFilter !== 'ALL') {
             list = list.filter(t => t.priority === priorityFilter);
         }
+        if (filterMode === 'COMPLETED') {
+            list = list.filter(t => t.completed);
+        } else if (filterMode === 'PENDING') {
+            list = list.filter(t => !t.completed);
+        }
         return list;
-    }, [tasks, debouncedSearchTerm, priorityFilter, todayStr]);
+    }, [tasks, debouncedSearchTerm, priorityFilter, filterMode, todayStr]);
+
+    const handleClearAll = async () => {
+        const todayTasks = tasks.filter(t => t.dueDate === todayStr && !t.deleted);
+        if (todayTasks.length === 0) return;
+        
+        if (window.confirm(`Are you sure you want to clear all ${todayTasks.length} tasks for today?`)) {
+            try {
+                await Promise.all(todayTasks.map(t => updateTask(t.id, { deleted: true })));
+                success?.("Today's tasks cleared.");
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    };
 
     const progress = useMemo(() => {
         if (activeTasks.length === 0) return 0;
@@ -80,16 +103,28 @@ export default function DashboardPage() {
                 <div className="lg:col-span-2 space-y-8">
                     {/* Metric Quick-View (Horizontal Row) */}
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="card p-4 flex flex-col justify-between h-[100px]">
+                        <button 
+                            onClick={() => setFilterMode('ALL')}
+                            className={clsx(
+                                "card p-4 flex flex-col justify-between h-[100px] text-left transition-all",
+                                filterMode === 'ALL' ? "border-[var(--accent)] ring-1 ring-[var(--accent)]/10 bg-[var(--accent-soft)]/10" : "hover:border-[var(--accent)]/30"
+                            )}
+                        >
                              <span className="text-[11px] font-medium text-[var(--text-secondary)]">Today's total</span>
                              <div className="flex items-end justify-between">
-                                 <span className="text-xl font-semibold text-[var(--text-primary)]">{activeTasks.length}</span>
+                                 <span className="text-xl font-semibold text-[var(--text-primary)]">{tasks.filter(t => t.dueDate === todayStr && !t.deleted).length}</span>
                                  <div className="w-6 h-6 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v20M2 12h20"/></svg>
                                  </div>
                              </div>
-                        </div>
-                        <div className="card p-4 flex flex-col justify-between h-[100px]">
+                        </button>
+                        <button 
+                            onClick={() => setFilterMode('PENDING')}
+                            className={clsx(
+                                "card p-4 flex flex-col justify-between h-[100px] text-left transition-all",
+                                filterMode === 'PENDING' ? "border-amber-400 ring-1 ring-amber-100 bg-amber-50/10" : "hover:border-amber-400/30"
+                            )}
+                        >
                              <span className="text-[11px] font-medium text-[var(--text-secondary)]">Completion rate</span>
                              <div className="flex items-end justify-between">
                                  <span className="text-xl font-semibold text-[var(--text-primary)]">{progress}%</span>
@@ -97,8 +132,14 @@ export default function DashboardPage() {
                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                  </div>
                              </div>
-                        </div>
-                        <div className="card p-4 flex flex-col justify-between h-[100px]">
+                        </button>
+                        <button 
+                            onClick={() => setFilterMode('COMPLETED')}
+                            className={clsx(
+                                "card p-4 flex flex-col justify-between h-[100px] text-left transition-all",
+                                filterMode === 'COMPLETED' ? "border-emerald-500 ring-1 ring-emerald-100 bg-emerald-50/10" : "hover:border-emerald-500/30"
+                            )}
+                        >
                              <span className="text-[11px] font-medium text-[var(--text-secondary)]">Completed tasks</span>
                              <div className="flex items-end justify-between">
                                  <span className="text-xl font-semibold text-[var(--text-primary)]">{completedToday}</span>
@@ -106,15 +147,23 @@ export default function DashboardPage() {
                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                  </div>
                              </div>
-                        </div>
+                        </button>
                     </div>
 
                     <div className="space-y-6">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
-                            <h2 className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-2">
-                                <span className="w-1 h-3 bg-[var(--accent)] rounded-full" />
-                                Personal tasks
-                            </h2>
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-2">
+                                    <span className="w-1 h-3 bg-[var(--accent)] rounded-full" />
+                                    Personal tasks
+                                </h2>
+                                <button 
+                                    onClick={handleClearAll}
+                                    className="text-[10px] font-bold text-[var(--accent)] hover:underline uppercase tracking-wider"
+                                >
+                                    Clear all
+                                </button>
+                            </div>
                             <div className="flex items-center gap-3">
                                 <div className="relative">
                                     <input 

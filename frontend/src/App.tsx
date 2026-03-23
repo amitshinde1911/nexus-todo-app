@@ -21,6 +21,12 @@ const AppContent: React.FC = () => {
   const { success } = useToast() || {};
   const [tab, setTab] = useState('TODAY');
   const [isInputOpen, setIsInputOpen] = useState(false);
+  const [inputContext, setInputContext] = useState<{ date?: string, time?: string } | null>(null);
+
+  const openTaskModal = (context?: { date?: string, time?: string }) => {
+    setInputContext(context || null);
+    setIsInputOpen(true);
+  };
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   if (authLoading) {
@@ -43,7 +49,7 @@ const AppContent: React.FC = () => {
       <Sidebar 
           activeTab={tab} 
           setTab={setTab} 
-          onNewTask={() => setIsInputOpen(true)} 
+          onNewTask={() => openTaskModal()} 
           userName={user.email || 'User'}
       />
 
@@ -53,16 +59,17 @@ const AppContent: React.FC = () => {
 
         <div className="max-w-[1400px] mx-auto p-8 flex flex-col gap-8 pb-32 animate-slide-up relative z-10">
            {tab === 'TODAY' && <DashboardPage />}
-           {tab === 'PLANNER' && (
-               <DailyPlanner 
-                   todos={tasks} 
-                   selectedDate={selectedDate} 
-                   onUpdateMetadata={(id, updates) => updateTask(id, updates)} 
-                   onStartTask={startTask}
-                   onPauseTask={pauseTask}
-                   onStopTask={stopTask}
-               />
-           )}
+            {tab === 'PLANNER' && (
+                <DailyPlanner 
+                    todos={tasks} 
+                    selectedDate={selectedDate} 
+                    onUpdateMetadata={(id, updates) => updateTask(id, updates)} 
+                    onStartTask={startTask}
+                    onPauseTask={pauseTask}
+                    onStopTask={stopTask}
+                    onCreateInSlot={(date, time) => openTaskModal({ date, time })}
+                />
+            )}
            {tab === 'WEEKLY' && (
                <div className="space-y-12">
                    <WeeklyCalendar 
@@ -143,6 +150,8 @@ const AppContent: React.FC = () => {
           isOpen={isInputOpen} 
           onClose={() => setIsInputOpen(false)} 
           selectedDate={selectedDate}
+          initialDueDate={inputContext?.date}
+          initialDueTime={inputContext?.time}
           onAdd={addTask}
       />
     </div>

@@ -8,9 +8,10 @@ interface DailyPlannerProps {
     onStartTask?: (id: string) => void;
     onPauseTask?: (id: string) => void;
     onStopTask?: (id: string) => void;
+    onCreateInSlot?: (date: string, time: string) => void;
 }
 
-export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, onStartTask, onPauseTask, onStopTask }: DailyPlannerProps) {
+export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, onStartTask, onPauseTask, onStopTask, onCreateInSlot }: DailyPlannerProps) {
     const hours = Array.from({ length: 15 }, (_, i) => i + 6); // 6:00 to 20:00
     const currentTime = new Date();
     const currentHour = currentTime.getHours();
@@ -181,7 +182,17 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
                                 )}
 
                                 {/* Card Slot */}
-                                <div className="flex-1 p-3 min-h-[100px] flex flex-col gap-2 group-hover:bg-gray-50/30 transition-colors">
+                                <div 
+                                    className="flex-1 p-3 min-h-[100px] flex flex-col gap-2 group-hover:bg-gray-50/50 transition-colors cursor-pointer relative"
+                                    onClick={() => onCreateInSlot?.(selectedDate, `${hour.toString().padStart(2, '0')}:00`)}
+                                >
+                                    {/* Slot Hover Indicator */}
+                                    <div className="absolute top-2 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--accent)] bg-[var(--accent-soft)] px-2 py-1 rounded-full">
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                            Add task
+                                        </div>
+                                    </div>
                                     {hourTasks.map(t => (
                                         <div 
                                             key={t.id} 

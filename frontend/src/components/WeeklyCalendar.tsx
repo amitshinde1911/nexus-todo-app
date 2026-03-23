@@ -4,9 +4,10 @@ import { clsx } from '../lib/utils';
 interface WeeklyCalendarProps {
     selectedDate: string;
     onSelectDate: (date: string, dayIndex: number) => void;
+    onCreateInDate?: (date: string) => void;
 }
 
-export default function WeeklyCalendar({ selectedDate, onSelectDate }: WeeklyCalendarProps) {
+export default function WeeklyCalendar({ selectedDate, onSelectDate, onCreateInDate }: WeeklyCalendarProps) {
     const [weekStart, setWeekStart] = useState(() => {
         const d = new Date(selectedDate || new Date());
         const day = d.getDay();
@@ -78,7 +79,7 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate }: WeeklyCal
                 className={clsx(
                     "relative flex-1 flex flex-col items-center justify-center py-4 rounded-xl cursor-pointer transition-all duration-300",
                     isSelected 
-                        ? "bg-[var(--accent)] text-white" 
+                        ? "bg-[var(--accent)] text-white shadow-lg shadow-red-100" 
                         : "hover:bg-gray-50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 )}
             >
@@ -93,8 +94,19 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate }: WeeklyCal
                 </span>
                 
                 {isToday && !isSelected && (
-                    <div className="absolute top-2 right-2 w-1 h-1 bg-[var(--accent)] rounded-full" />
+                    <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-[var(--accent)] rounded-full" />
                 )}
+
+                {/* Create Task Shortcut */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); onCreateInDate?.(dateStr); }}
+                    className={clsx(
+                        "absolute -bottom-2 w-6 h-6 rounded-full bg-white border border-[var(--border)] shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[var(--accent)] hover:text-white transition-all transform hover:scale-110",
+                        isSelected && "group-hover:translate-x-1"
+                    )}
+                >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
             </div>
         );
     }
