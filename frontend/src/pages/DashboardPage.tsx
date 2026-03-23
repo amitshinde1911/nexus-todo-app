@@ -9,7 +9,7 @@ import DigitalClock from '../components/DigitalClock';
 
 export default function DashboardPage() {
     const { user } = useAuthContext();
-    const { tasks, loading, addTask, updateTask, deleteTask } = useTasks(user?.uid);
+    const { tasks, loading, addTask, updateTask, deleteTask, startTask, pauseTask, stopTask } = useTasks(user?.uid);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [priorityFilter, setPriorityFilter] = useState('ALL');
@@ -49,18 +49,24 @@ export default function DashboardPage() {
         <div className="space-y-12 animate-slide-up pb-20">
             {/* Header / Greeting */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="flex flex-col gap-3">
-                    <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                        Good Day, {user?.displayName ? user.displayName.split(' ')[0] : (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'Achiever')}
+                <div className="flex flex-col gap-2">
+                    <h1 className="text-2xl font-semibold text-[var(--text-primary)]">
+                        Good morning, {user?.displayName ? user.displayName.split(' ')[0] : (user?.email ? user.email.split('@')[0] : 'User')}
                     </h1>
                     <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">
+                        <span className="text-xs text-[var(--text-secondary)]">
                             {formatDate(todayStr)}
                         </span>
-                        <div className="h-[1px] w-8 bg-white/5" />
-                        <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-[0.2em]">
-                            Focused Session Active
-                        </span>
+                        <div className="h-3 w-[1px] bg-[var(--border)]" />
+                        {activeTasks.some(t => t.status === 'IN_PROGRESS') ? (
+                            <span className="text-xs text-[var(--accent)] font-medium animate-pulse">
+                                Execution in progress: {activeTasks.find(t => t.status === 'IN_PROGRESS')?.title}
+                            </span>
+                        ) : (
+                            <span className="text-xs text-[var(--text-secondary)] font-medium">
+                                System ready for next objective
+                            </span>
+                        )}
                     </div>
                 </div>
 
@@ -74,84 +80,88 @@ export default function DashboardPage() {
                 <div className="lg:col-span-2 space-y-8">
                     {/* Metric Quick-View (Horizontal Row) */}
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="glass-card p-6 flex flex-col justify-between h-[120px]">
-                             <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.15em]">Daily Workload</span>
+                        <div className="card p-4 flex flex-col justify-between h-[100px]">
+                             <span className="text-[11px] font-medium text-[var(--text-secondary)]">Today's total</span>
                              <div className="flex items-end justify-between">
-                                 <span className="text-2xl font-black text-[var(--text-primary)]">{activeTasks.length}</span>
-                                 <div className="w-6 h-6 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
-                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 2v20M2 12h20"/></svg>
+                                 <span className="text-xl font-semibold text-[var(--text-primary)]">{activeTasks.length}</span>
+                                 <div className="w-6 h-6 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v20M2 12h20"/></svg>
                                  </div>
                              </div>
                         </div>
-                        <div className="glass-card p-6 flex flex-col justify-between h-[120px]">
-                             <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.15em]">Success Rate</span>
+                        <div className="card p-4 flex flex-col justify-between h-[100px]">
+                             <span className="text-[11px] font-medium text-[var(--text-secondary)]">Completion rate</span>
                              <div className="flex items-end justify-between">
-                                 <span className="text-2xl font-black text-[var(--text-primary)]">{progress}%</span>
-                                 <div className="w-6 h-6 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                 <span className="text-xl font-semibold text-[var(--text-primary)]">{progress}%</span>
+                                 <div className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                                  </div>
                              </div>
                         </div>
-                        <div className="glass-card p-6 flex flex-col justify-between h-[120px]">
-                             <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.15em]">Completed Today</span>
+                        <div className="card p-4 flex flex-col justify-between h-[100px]">
+                             <span className="text-[11px] font-medium text-[var(--text-secondary)]">Completed tasks</span>
                              <div className="flex items-end justify-between">
-                                 <span className="text-2xl font-black text-[var(--text-primary)]">{completedToday}</span>
-                                 <div className="w-6 h-6 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
-                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                 <span className="text-xl font-semibold text-[var(--text-primary)]">{completedToday}</span>
+                                 <div className="w-6 h-6 rounded-md bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                  </div>
                              </div>
                         </div>
                     </div>
 
                     <div className="space-y-6">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
-                            <h2 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.3em] flex items-center gap-3">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
+                            <h2 className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-2">
                                 <span className="w-1 h-3 bg-[var(--accent)] rounded-full" />
-                                Operational Objectives
+                                Personal tasks
                             </h2>
-                            <div className="flex items-center gap-4">
-                                <div className="relative group">
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
                                     <input 
                                         type="text"
-                                        placeholder="SEARCH INTENTIONS..."
+                                        placeholder="Search tasks..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest w-48 focus:w-64 focus:border-[var(--accent)]/50 transition-all outline-none placeholder:text-[var(--text-secondary)]/20"
+                                        className="bg-white border border-[var(--border)] rounded-md px-3 py-1.5 text-xs w-40 focus:w-56 focus:border-[var(--accent)] transition-all outline-none placeholder:text-[var(--text-secondary)]/40"
                                     />
-                                    <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]/20 group-focus-within:text-[var(--accent)] transition-colors" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                                    <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]/30" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                                 </div>
                                 <select 
                                     value={priorityFilter}
                                     onChange={(e) => setPriorityFilter(e.target.value)}
-                                    className="bg-white/[0.03] border border-white/5 rounded-xl px-4 py-2 text-[9px] font-black uppercase tracking-widest outline-none focus:border-[var(--accent)]/50 transition-all cursor-pointer text-[var(--text-secondary)]/60"
+                                    className="bg-white border border-[var(--border)] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[var(--accent)] transition-all cursor-pointer text-[var(--text-secondary)]"
                                 >
-                                    <option value="ALL">ALL LEVELS</option>
-                                    <option value="URGENT">URGENT</option>
-                                    <option value="HIGH">HIGH</option>
-                                    <option value="MEDIUM">MEDIUM</option>
-                                    <option value="LOW">LOW</option>
+                                    <option value="ALL">All priorities</option>
+                                    <option value="URGENT">Urgent</option>
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="LOW">Low</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div className="grid gap-4">
+                        <div className="card divide-y divide-[var(--border)] overflow-hidden">
                             {activeTasks.length > 0 ? (
                                 activeTasks.map(task => (
-                                    <TodoItem 
-                                        key={task.id} 
-                                        todo={task} 
-                                        onToggle={(t: any) => updateTask(t.id, { completed: !t.completed })}
-                                        onDelete={(id: string) => deleteTask(id)}
-                                        onUpdateMetadata={(id: string, updates: any) => updateTask(id, updates)}
-                                    />
+                                    <div key={task.id} className="first:border-t-0">
+                                        <TodoItem 
+                                            todo={task} 
+                                            onToggle={(t: any) => updateTask(t.id, { completed: !t.completed })}
+                                            onDelete={(id: string) => deleteTask(id)}
+                                            onUpdateMetadata={(id: string, updates: any) => updateTask(id, updates)}
+                                            onStartTask={startTask}
+                                            onPauseTask={pauseTask}
+                                            onStopTask={stopTask}
+                                        />
+                                    </div>
                                 ))
                             ) : (
-                                <div className="glass-card py-24 text-center border-dashed border-white/5 group hover:border-[var(--accent)]/30 cursor-pointer">
-                                    <div className="w-12 h-12 rounded-full border border-white/5 flex items-center justify-center mx-auto mb-6 text-[var(--text-secondary)]/20 group-hover:text-[var(--accent)] transition-colors">
-                                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <div className="py-16 text-center group">
+                                    <div className="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center mx-auto mb-4 text-[var(--text-secondary)]/30">
+                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                     </div>
-                                    <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.2em]">Zero-Point Field Reached</p>
-                                    <p className="text-[8px] text-[var(--text-secondary)]/30 uppercase tracking-[0.1em] mt-3">All sectors cleared. Standby for new objectives.</p>
+                                    <p className="text-sm font-semibold text-[var(--text-primary)]">All caught up!</p>
+                                    <p className="text-xs text-[var(--text-secondary)] mt-1">You have no tasks for today. Great job!</p>
                                 </div>
                             )}
                         </div>
@@ -159,61 +169,58 @@ export default function DashboardPage() {
                 </div>
 
                 {/* SECONDARY COLUMN: Insights / Sub-panel */}
-                <div className="space-y-10 lg:sticky lg:top-8">
-                    <div className="flex flex-col gap-8">
+                <div className="space-y-8 lg:sticky lg:top-8">
+                    <div className="flex flex-col gap-6">
                         <div>
-                             <h2 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.3em] px-1 mb-6">Daily Briefing</h2>
-                             <div className="glass-card p-10 border-[var(--accent)]/5 relative overflow-hidden group">
-                                <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--accent)]/5 blur-3xl -mr-16 -mt-16" />
-                                </div>
-                                <div className="space-y-8 relative z-10">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 rounded-2xl glass flex items-center justify-center text-[var(--accent)] shadow-lg shadow-[var(--accent)]/10">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                             <h2 className="text-xs font-semibold text-[var(--text-secondary)] px-1 mb-4">Daily overview</h2>
+                             <div className="card p-6 border-[var(--border)] overflow-hidden">
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-[var(--text-secondary)]">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                         </div>
                                         <div>
-                                            <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">Time Budget</span>
-                                            <p className="text-[9px] text-[var(--text-secondary)] font-bold mt-1 uppercase">4.5h Allocated</p>
+                                            <span className="text-xs font-semibold text-[var(--text-primary)]">Estimated time</span>
+                                            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">4.5h allocated</p>
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 rounded-2xl glass flex items-center justify-center text-amber-500">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-[var(--text-secondary)]">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                                         </div>
                                         <div>
-                                            <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">Priority Load</span>
-                                            <p className="text-[9px] text-[var(--text-secondary)] font-bold mt-1 uppercase">High Morning Load</p>
+                                            <span className="text-xs font-semibold text-[var(--text-primary)]">Workload</span>
+                                            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">High morning load</p>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 rounded-2xl glass flex items-center justify-center text-blue-500">
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 12H2M12 2v20M2 12l10-10 10 10M12 22l10-10-10-10"/></svg>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-[var(--text-secondary)]">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12H2M12 2v20M2 12l10-10 10 10M12 22l10-10-10-10"/></svg>
                                         </div>
                                         <div>
-                                            <span className="text-[10px] font-black text-[var(--text-primary)] uppercase tracking-widest">Optimization</span>
-                                            <p className="text-[9px] text-[var(--text-secondary)] font-bold mt-1 uppercase">Focus on Deep Work</p>
+                                            <span className="text-xs font-semibold text-[var(--text-primary)]">Focus strategy</span>
+                                            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Focus on deep work</p>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div className="mt-10 pt-8 border-t border-white/5">
-                                    <button className="btn-secondary w-full text-[9px] font-black tracking-[0.2em] group-hover:bg-[var(--accent)] group-hover:text-white transition-all">
-                                        ANALYZE FLOW
+                                <div className="mt-8 pt-6 border-t border-[var(--border)]">
+                                    <button className="btn-secondary w-full text-xs">
+                                        View trends
                                     </button>
                                 </div>
                              </div>
                         </div>
 
                         <div>
-                             <h2 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.3em] px-1 mb-6">Execution Vectors</h2>
-                             <div className="space-y-4">
+                             <h2 className="text-xs font-semibold text-[var(--text-secondary)] px-1 mb-4">Goal progress</h2>
+                             <div className="space-y-2">
                                  {['Prime Morning', 'Deep Work Block', 'Recovery Buffer'].map((vector, i) => (
-                                     <div key={vector} className="glass-card p-6 flex items-center justify-between border-white/[0.02]">
-                                         <span className="text-[10px] font-bold text-[var(--text-primary)]">{vector}</span>
-                                         <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                                     <div key={vector} className="card p-4 flex items-center justify-between">
+                                         <span className="text-xs font-medium text-[var(--text-primary)]">{vector}</span>
+                                         <div className="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
                                              <div className="h-full bg-[var(--accent)]" style={{ width: `${(3-i)*30}%` }} />
                                          </div>
                                      </div>
@@ -222,9 +229,9 @@ export default function DashboardPage() {
                         </div>
 
                         <div>
-                             <h2 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.3em] px-1 mb-6">Identity Check</h2>
-                             <div className="glass-card p-8 border-emerald-500/5 group">
-                                <p className="text-[10px] font-bold text-[var(--text-secondary)] leading-relaxed italic opacity-60 group-hover:opacity-100 transition-opacity">
+                             <h2 className="text-xs font-semibold text-[var(--text-secondary)] px-1 mb-4">Daily quote</h2>
+                             <div className="card p-6 border-transparent bg-gray-50">
+                                <p className="text-xs text-[var(--text-secondary)] leading-relaxed italic">
                                     "Consistency is the only protocol that matters."
                                 </p>
                              </div>

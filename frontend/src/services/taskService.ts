@@ -26,6 +26,9 @@ export const taskService = {
       userId,
       completed: false,
       deleted: false,
+      status: 'TODO',
+      actualMins: 0,
+      repeat: 'NONE',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       version: 1
@@ -50,10 +53,23 @@ export const taskService = {
     });
   },
 
-  subscribeToTasks: (userId: string, callback: (tasks: Task[], error?: any) => void) => {
+  restoreTask: async (userId: string, taskId: string) => {
+    const taskRef = doc(db, `users/${userId}/${COLLECTION_NAME}/${taskId}`);
+    await updateDoc(taskRef, {
+      deleted: false,
+      updatedAt: serverTimestamp()
+    });
+  },
+
+  purgeTask: async (userId: string, taskId: string) => {
+    const taskRef = doc(db, `users/${userId}/${COLLECTION_NAME}/${taskId}`);
+    await deleteDoc(taskRef);
+  },
+
+  subscribeToTasks: (userId: string, callback: (tasks: Task[], error?: any) => void, includeDeleted: boolean = false) => {
     const q = query(
       collection(db, `users/${userId}/${COLLECTION_NAME}`),
-      where("deleted", "==", false),
+      where("deleted", "==", includeDeleted),
       orderBy("createdAt", "desc"),
       limit(100)
     );

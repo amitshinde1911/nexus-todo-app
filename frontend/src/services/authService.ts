@@ -15,15 +15,15 @@ const mapAuthError = (code: string): string => {
     case 'auth/user-not-found':
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
-      return 'Unauthorized Vector. Identification failed.';
+      return 'Incorrect email or password.';
     case 'auth/email-already-in-use':
-      return 'Coordination conflict. This identity is already established.';
+      return 'This email is already registered. Please sign in instead.';
     case 'auth/weak-password':
-      return 'Security Cipher failed complexity audit.';
+      return 'Password is too weak. Please use a stronger combination.';
     case 'auth/too-many-requests':
-      return 'System overload. Try again after cooling down.';
+      return 'Too many failed attempts. Please try again later.';
     default:
-      return 'Protocol interruption. Authentication failed.';
+      return 'An authentication error occurred. Please try again.';
   }
 };
 

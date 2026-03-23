@@ -34,6 +34,9 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
     const totalInScope = scopedTodos.length;
     const planAccuracy = totalInScope === 0 ? 0 : Math.round((completedCount / totalInScope) * 100);
 
+    const totalFocusMins = completedInScope.reduce((acc, t) => acc + (t.actualMins || 0), 0);
+    const avgCompletionMins = completedCount === 0 ? 0 : Math.round(totalFocusMins / completedCount);
+
     const calculateStreak = () => {
         const completedDates = [...new Set(
             todos.filter(t => t.completed && t.dueDate).map(t => t.dueDate)
@@ -69,10 +72,10 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
         <button
             onClick={() => setScope(id)}
             className={clsx(
-                "flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all duration-300",
+                "flex-1 py-1.5 rounded-md text-xs font-medium transition-all",
                 scope === id 
-                    ? "bg-white/10 text-[var(--text-primary)] shadow-sm" 
-                    : "text-[var(--text-secondary)]/40 hover:text-[var(--text-secondary)]"
+                    ? "bg-gray-100 text-[var(--accent)]" 
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
         >
             {label}
@@ -85,15 +88,15 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
                 <div>
                     <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-2">
-                        Operational Intelligence
+                        Performance Insights
                     </h1>
                     <p className="text-sm font-medium text-[var(--text-secondary)]/60 tracking-tight">
-                        Decoding your productivity rhythms and performance vectors.
+                        Analyze your productivity trends and stay on track.
                     </p>
                 </div>
 
                 {/* Scope Switcher */}
-                <div className="flex p-1 glass rounded-xl w-full md:w-64">
+                <div className="flex p-1 bg-white border border-[var(--border)] rounded-lg w-full md:w-64">
                     <ScopeTab id="today" label="Today" />
                     <ScopeTab id="week" label="Week" />
                     <ScopeTab id="month" label="Month" />
@@ -101,63 +104,80 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
             </div>
 
             {/* Core Momentum Card */}
-            <div className="relative overflow-hidden glass-card p-10 group transition-all">
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="card p-8 group overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="space-y-4">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--accent-soft)] rounded-full mb-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" />
-                            <span className="text-[9px] font-black text-[var(--accent)] uppercase tracking-[0.2em]">Execution Momentum</span>
+                        <div className="inline-flex items-center gap-2 px-2.5 py-0.5 bg-[var(--accent-soft)] rounded-full">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+                            <span className="text-[10px] font-semibold text-[var(--accent)]">Goal streak</span>
                         </div>
-                        <h3 className="text-xs font-bold text-[var(--text-secondary)]/60 uppercase tracking-widest">Active Streak</h3>
+                        <h3 className="text-xs font-semibold text-[var(--text-secondary)] tracking-tight">Active streak</h3>
                         <p className={clsx(
-                            "text-7xl font-black tracking-tighter transition-all duration-700",
+                            "text-7xl font-semibold tracking-tighter transition-all duration-700",
                             currentStreak > 0 ? "text-[var(--accent)]" : "text-[var(--text-primary)]"
                         )}>
-                            {currentStreak.toString().padStart(2, '0')}<span className="text-xl ml-3 font-black text-[var(--text-secondary)]/20">{currentStreak === 1 ? 'DAY' : 'DAYS'}</span>
+                            {currentStreak.toString().padStart(2, '0')}<span className="text-xl ml-3 font-medium text-[var(--text-secondary)]/20">{currentStreak === 1 ? 'day' : 'days'}</span>
                         </p>
-                        <p className="text-xs font-semibold text-[var(--text-secondary)] max-w-sm leading-relaxed">
+                        <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
                             {currentStreak === 0 
-                                ? "Initialize sequence by completing your first objective today." 
-                                : `Maintain the current frequency to stabilize your productivity wave.`}
+                                ? "Start your streak by completing a task today!" 
+                                : `Keep it up! Consistency is key to reaching your goals.`}
                         </p>
                     </div>
                     <div className={clsx(
-                        "text-8xl transition-all duration-1000",
-                        currentStreak > 0 ? "grayscale-0 group-hover:scale-110 drop-shadow-[0_0_30px_rgba(124,108,255,0.3)]" : "grayscale opacity-[0.05]"
+                        "text-7xl transition-all duration-700",
+                        currentStreak > 0 ? "grayscale-0" : "grayscale opacity-10"
                     )}>
                         🔥
                     </div>
                 </div>
-                
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-80 h-80 bg-[var(--accent)] opacity-[0.03] rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
             </div>
 
             {/* Performance Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="glass-card p-10 group">
-                    <p className="text-[10px] font-black text-[var(--text-secondary)]/30 uppercase tracking-[0.3em] mb-4 group-hover:text-[var(--accent)] transition-colors">Objectives Secured</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="card p-6 group">
+                    <p className="text-[10px] font-semibold text-[var(--text-secondary)] mb-4 transition-colors">Tasks completed</p>
                     <div className="flex items-end gap-3">
-                        <span className="text-6xl font-black text-[var(--text-primary)] tracking-tighter tabular-nums leading-none">
+                        <span className="text-4xl font-semibold text-[var(--text-primary)] tracking-tighter tabular-nums leading-none">
                             {completedCount.toString().padStart(2, '0')}
                         </span>
-                        <span className="text-xs font-bold text-[var(--text-secondary)]/40 uppercase mb-2 tracking-widest">/ {scopeLabel}</span>
+                        <span className="text-[10px] text-[var(--text-secondary)]/40 mb-1">{scopeLabel}</span>
                     </div>
                 </div>
 
-                <div className="glass-card p-10 group">
-                    <p className="text-[10px] font-black text-[var(--text-secondary)]/30 uppercase tracking-[0.3em] mb-4 group-hover:text-[var(--accent)] transition-colors">Protocol Precision</p>
+                <div className="card p-6 group">
+                    <p className="text-[10px] font-semibold text-[var(--text-secondary)] mb-4 transition-colors">Focus time</p>
+                    <div className="flex items-end gap-3">
+                        <span className="text-4xl font-semibold text-[var(--text-primary)] tracking-tighter tabular-nums leading-none">
+                            {totalFocusMins < 60 ? `${totalFocusMins}m` : `${(totalFocusMins/60).toFixed(1)}h`}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-secondary)]/40 mb-1">TotalLogged</span>
+                    </div>
+                </div>
+
+                <div className="card p-6 group">
+                    <p className="text-[10px] font-semibold text-[var(--text-secondary)] mb-4 transition-colors">Avg. pace</p>
+                    <div className="flex items-end gap-3">
+                        <span className="text-4xl font-semibold text-[var(--text-primary)] tracking-tighter tabular-nums leading-none text-blue-500">
+                            {avgCompletionMins}m
+                        </span>
+                        <span className="text-[10px] text-[var(--text-secondary)]/40 mb-1">per objective</span>
+                    </div>
+                </div>
+
+                <div className="card p-6 group">
+                    <p className="text-[10px] font-semibold text-[var(--text-secondary)] mb-4 transition-colors">Planning accuracy</p>
                     <div className="flex items-end gap-3">
                         <span className={clsx(
-                            "text-6xl font-black tracking-tighter tabular-nums leading-none transition-colors",
+                            "text-4xl font-semibold tracking-tighter tabular-nums leading-none transition-colors",
                             planAccuracy >= 70 ? "text-emerald-500" : planAccuracy >= 40 ? "text-amber-500" : "text-[var(--text-primary)]"
                         )}>
                             {planAccuracy}%
                         </span>
                         <svg className={clsx(
-                            "w-8 h-8 mb-2 transition-all duration-700",
-                            planAccuracy >= 70 ? "text-emerald-500" : "text-[var(--text-secondary)]/10"
-                        )} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="M5 12l5 5L20 7"/></svg>
+                            "w-6 h-6 mb-1 transition-all",
+                            planAccuracy >= 70 ? "text-emerald-500" : "text-[var(--text-secondary)]/5"
+                        )} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
                     </div>
                 </div>
             </div>
@@ -165,34 +185,34 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
             {/* Attention Distribution */}
             <div className="space-y-8">
                 <div className="flex items-center justify-between px-2">
-                    <h3 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Attention Vectors</h3>
-                    <span className="text-[10px] font-black text-[var(--text-secondary)]/30 uppercase tracking-widest">by Department</span>
+                    <h3 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Time distribution</h3>
+                    <span className="text-[10px] font-semibold text-[var(--text-secondary)] tracking-tight">by category</span>
                 </div>
                 
-                <div className="glass-card p-10 relative overflow-hidden">
+                <div className="card p-8">
                     {categoryCounts.length === 0 ? (
-                        <div className="py-12 text-center space-y-4">
-                            <p className="text-sm font-bold text-[var(--text-secondary)]/30 uppercase tracking-widest">No Sector Data Available</p>
+                        <div className="py-12 text-center">
+                            <p className="text-sm text-[var(--text-secondary)]">No data available yet</p>
                         </div>
                     ) : (
-                        <div className="space-y-12">
+                        <div className="space-y-8">
                             {categoryCounts.map((cat, idx) => {
                                 const pct = Math.round((cat.count / completedCount) * 100);
                                 return (
-                                    <div key={cat.name} className="group animate-in fade-in slide-in-from-left-4 duration-500" style={{ animationDelay: `${idx * 100}ms` }}>
-                                        <div className="flex justify-between items-end mb-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-4 h-4 rounded shadow-lg" style={{ background: cat.color }} />
-                                                <span className="text-xs font-black text-[var(--text-secondary)] uppercase tracking-widest">{cat.name}</span>
+                                    <div key={cat.name} className="group">
+                                        <div className="flex justify-between items-end mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-3 h-3 rounded-sm" style={{ background: cat.color }} />
+                                                <span className="text-xs font-semibold text-[var(--text-secondary)]">{cat.name}</span>
                                             </div>
-                                            <span className="text-xl font-black tabular-nums tracking-tighter" style={{ color: cat.color }}>
-                                                {pct}<span className="text-[10px] ml-1 opacity-20">%</span>
+                                            <span className="text-xl font-semibold tabular-nums tracking-tighter" style={{ color: cat.color }}>
+                                                {pct}<span className="text-xs ml-0.5 opacity-20">%</span>
                                             </span>
                                         </div>
-                                        <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden shadow-inner">
+                                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                                             <div 
-                                                className="h-full rounded-full transition-all duration-1000 ease-out group-hover:brightness-110" 
-                                                style={{ width: `${pct}%`, background: cat.color, boxShadow: `0 0 16px ${cat.color}40` }} 
+                                                className="h-full rounded-full transition-all duration-1000 ease-out" 
+                                                style={{ width: `${pct}%`, background: cat.color }} 
                                             />
                                         </div>
                                     </div>
@@ -206,14 +226,14 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
             {/* Strategic Portal CTA */}
             <button
                 onClick={() => setTab('INSIGHTS')}
-                className="group w-full p-10 rounded-[32px] bg-[var(--text-primary)] text-[var(--bg-main)] transition-all duration-500 hover:bg-[var(--accent)] hover:text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl active:scale-[0.98]"
+                className="group w-full p-8 rounded-2xl bg-[var(--text-primary)] text-white transition-all duration-300 hover:bg-[var(--accent)] flex items-center justify-between gap-6 active:scale-[0.99]"
             >
-                <div className="text-center md:text-left space-y-2">
-                    <h4 className="text-2xl font-bold tracking-tight leading-none group-hover:translate-x-2 transition-transform duration-500">Initiate Weekly Debrief</h4>
-                    <p className="text-sm font-medium opacity-50 tracking-tight">Audit performance · Log milestones · Recalibrate focus vectors.</p>
+                <div className="text-left space-y-1">
+                    <h4 className="text-xl font-semibold tracking-tight">View weekly summary</h4>
+                    <p className="text-sm opacity-60">Review your progress and plan your next week</p>
                 </div>
-                <div className="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center group-hover:rotate-45 transition-transform duration-500">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M7 17l10-10M7 7h10v10"/></svg>
+                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-1">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
                 </div>
             </button>
         </div>

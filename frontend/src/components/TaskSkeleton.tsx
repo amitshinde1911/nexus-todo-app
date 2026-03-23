@@ -1,7 +1,7 @@
 import React from 'react';
 
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
-  <div className={`animate-pulse bg-white/[0.03] rounded-[20px] border border-white/5 ${className}`} />
+  <div className={`animate-pulse bg-gray-100 rounded-lg ${className}`} />
 );
 
 export const TaskSkeleton: React.FC = () => (

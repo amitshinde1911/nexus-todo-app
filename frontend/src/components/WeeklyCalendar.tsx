@@ -76,28 +76,24 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate }: WeeklyCal
                 key={dateStr}
                 onClick={() => onSelectDate(dateStr, i)}
                 className={clsx(
-                    "relative flex-1 flex flex-col items-center justify-center py-4 rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden",
+                    "relative flex-1 flex flex-col items-center justify-center py-4 rounded-xl cursor-pointer transition-all duration-300",
                     isSelected 
-                        ? "bg-white/10 text-white scale-105 z-10 shadow-sm" 
-                        : "hover:bg-white/5 text-muted-foreground hover:text-foreground"
+                        ? "bg-[var(--accent)] text-white" 
+                        : "hover:bg-gray-50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 )}
             >
                 <span className={clsx(
-                    "text-[9px] font-bold uppercase tracking-[0.2em] mb-2 transition-colors duration-300",
-                    isSelected ? "text-primary" : "opacity-40"
+                    "text-[10px] font-semibold mb-2 transition-colors",
+                    isSelected ? "text-white" : "text-[var(--text-secondary)]/40"
                 )}>
                     {dayNamesShort[i]}
                 </span>
-                <span className="text-sm font-bold tracking-tight">
+                <span className="text-sm font-semibold tracking-tight">
                     {d.getDate()}
                 </span>
                 
-                {isSelected && (
-                    <div className="absolute bottom-1.5 w-1 h-1 bg-primary rounded-full shadow-[0_0_8px_rgba(108,92,231,0.8)]" />
-                )}
-                
                 {isToday && !isSelected && (
-                    <div className="absolute top-2 right-2 w-1 h-1 bg-white/20 rounded-full" />
+                    <div className="absolute top-2 right-2 w-1 h-1 bg-[var(--accent)] rounded-full" />
                 )}
             </div>
         );
@@ -121,7 +117,7 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate }: WeeklyCal
                     </button>
                 </div>
                 
-                <h3 className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-[0.3em]">
+                <h3 className="text-xs font-semibold text-[var(--text-secondary)]">
                     {getWeekRangeLabel()}
                 </h3>
             </div>
@@ -130,7 +126,7 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate }: WeeklyCal
                 onTouchStart={handleTouchStart} 
                 onTouchMove={handleTouchMove} 
                 onTouchEnd={handleTouchEnd}
-                className="relative flex gap-1 p-1 glass rounded-[24px]"
+                className="relative flex gap-1 p-1 bg-white border border-[var(--border)] rounded-2xl"
             >
                 {days}
             </div>

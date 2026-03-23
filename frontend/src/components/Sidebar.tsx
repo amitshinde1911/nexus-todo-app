@@ -31,7 +31,10 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
         ), label: 'Timer' },
         { id: 'INSIGHTS', icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        ), label: 'Stats' }
+        ), label: 'Stats' },
+        { id: 'TRASH', icon: (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        ), label: 'Trash' }
     ];
 
     if (isAdmin) {
@@ -46,32 +49,32 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
     };
 
     return (
-        <aside className="relative z-[100] w-[240px] min-w-[240px] h-screen bg-[var(--bg-sidebar)] border-r border-black/5 flex flex-col px-4 py-10 overflow-hidden">
+        <aside className="relative z-[100] w-[240px] min-w-[240px] h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col p-4 overflow-hidden">
             {/* Brand */}
-            <div className="flex items-center gap-3 mb-12 px-2 group cursor-pointer" onClick={() => handleTabClick('TODAY')}>
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[var(--accent)] to-[#9B8FFF] flex items-center justify-center text-white font-black shadow-lg shadow-[var(--accent)]/20">
+            <div className="flex items-center gap-3 mb-8 px-2 cursor-pointer" onClick={() => handleTabClick('TODAY')}>
+                <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold">
                     N
                 </div>
-                <span className="font-bold tracking-[0.2em] text-[var(--text-primary)] text-[11px] uppercase">Nexus Protocol</span>
+                <span className="font-semibold tracking-tight text-[var(--text-primary)] text-lg italic">Nexus</span>
             </div>
 
             {/* New Task Button */}
             {!isAdmin && (
-                <div className="mb-12 px-1">
+                <div className="mb-8 px-1">
                     <button
                         onClick={(e) => { e.stopPropagation(); onNewTask(); }}
-                        className="btn-primary w-full gap-2 shadow-[0_8px_20px_rgba(124,108,255,0.2)]"
+                        className="btn-primary w-full gap-2"
                     >
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                         </svg>
-                        INITIATE
+                        New task
                     </button>
                 </div>
             )}
 
             {/* Navigation */}
-            <nav className="flex-1 flex flex-col gap-2 relative">
+            <nav className="flex-1 flex flex-col gap-1 relative overflow-y-auto scrollbar-hide">
                 {items.map(item => {
                     const active = activeTab === item.id;
                     return (
@@ -79,19 +82,19 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
                             key={item.id}
                             onClick={() => handleTabClick(item.id)}
                             className={clsx(
-                                "sidebar-item group relative z-[51]",
+                                "sidebar-item group",
                                 active && "sidebar-item-active"
                             )}
                         >
                             <span className={clsx(
-                                "flex items-center justify-center w-5 h-5 transition-all duration-300",
-                                active ? "text-[var(--accent)] scale-110" : "opacity-60 group-hover:opacity-100"
+                                "flex items-center justify-center transition-colors duration-200",
+                                active ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"
                             )}>
                                 {item.icon}
                             </span>
                             <span className={clsx(
-                                "transition-colors duration-300",
-                                active ? "text-[var(--text-primary)]" : "group-hover:text-[var(--text-primary)]"
+                                "transition-colors duration-200",
+                                active ? "font-semibold" : "group-hover:text-[var(--text-primary)]"
                             )}>
                                 {item.label}
                             </span>
@@ -101,37 +104,36 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
             </nav>
 
             {/* Footer */}
-            <div className="mt-auto pt-8 border-t border-white/[0.03] flex flex-col gap-4">
-                <div className="flex items-center gap-3 px-2 group cursor-pointer">
-                    <div className="relative w-9 h-9 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-[10px] text-[var(--text-primary)] font-black group-hover:border-[var(--accent)]/30 transition-all overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-[var(--accent)] to-blue-500 opacity-10 blur-md pointer-events-none" />
-                        <span className="relative z-10">{isAdmin ? 'SU' : 'A'}</span>
+            <div className="mt-auto pt-4 border-t border-[var(--border)] flex flex-col gap-2">
+                <div className="flex items-center gap-3 px-2 py-2 group">
+                    <div className="w-8 h-8 rounded-lg bg-[var(--bg-main)] border border-[var(--border)] flex items-center justify-center text-xs text-[var(--text-primary)] font-semibold">
+                        {isAdmin ? 'AD' : 'UI'}
                     </div>
                     <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-bold text-[var(--text-primary)] uppercase tracking-wider truncate">
+                        <span className="text-xs font-semibold text-[var(--text-primary)] truncate">
                             {userName.split('@')[0]}
                         </span>
-                        <span className="text-[8px] font-black text-[var(--text-secondary)]/40 uppercase tracking-widest">
-                            {isAdmin ? 'System Admin' : 'Active Tier'}
+                        <span className="text-[10px] text-[var(--text-secondary)]">
+                            {isAdmin ? 'Administrator' : 'User'}
                         </span>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-1 relative z-[60]">
+                <div className="flex flex-col gap-1">
                     <button
                         onClick={() => document.documentElement.classList.toggle('dark')}
-                        className="flex items-center gap-3 px-3 h-10 rounded-xl text-[9px] font-black text-[var(--text-secondary)]/40 hover:bg-white/[0.03] hover:text-[var(--text-primary)] transition-all duration-300 uppercase tracking-[0.2em]"
+                        className="flex items-center gap-3 px-3 h-9 rounded-lg text-xs text-[var(--text-secondary)] hover:bg-[var(--hover)] hover:text-[var(--text-primary)] transition-all"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                        Interface
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        Dark Mode
                     </button>
 
                     <button
-                        onClick={(e) => { e.stopPropagation(); console.log('DEBUG: Terminate button clicked'); logout(); }}
-                        className="flex items-center gap-3 px-3 h-10 rounded-xl text-[9px] font-black text-red-500/40 hover:bg-red-500/10 hover:text-red-500 transition-all duration-300 uppercase tracking-[0.2em] group/exit"
+                        onClick={(e) => { e.stopPropagation(); logout(); }}
+                        className="flex items-center gap-3 px-3 h-9 rounded-lg text-xs text-[var(--text-secondary)] hover:bg-red-50 hover:text-[var(--accent)] transition-all group/exit"
                     >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        Terminate
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Logout
                     </button>
                 </div>
             </div>

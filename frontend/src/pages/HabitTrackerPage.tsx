@@ -36,17 +36,17 @@ export default function HabitTrackerPage() {
     return (
         <div className="space-y-12 animate-slide-up pb-20">
             {/* Header / Greeting */}
-            <div className="flex flex-col gap-3">
-                <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
-                    Identity & Rituals
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-semibold text-[var(--text-primary)] tracking-tight">
+                    Habits & routine
                 </h1>
                 <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold text-[var(--text-secondary)]/40 uppercase tracking-[0.2em]">
-                        Current Consistency: {progress}%
+                    <span className="text-xs font-medium text-[var(--text-secondary)]">
+                        Current consistency: {progress}%
                     </span>
-                    <div className="h-[1px] w-8 bg-white/5" />
-                    <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-[0.2em]">
-                        Protocols active
+                    <div className="h-[1px] w-6 bg-[var(--border)]" />
+                    <span className="text-xs font-semibold text-[var(--accent)]">
+                        Active habits
                     </span>
                 </div>
             </div>
@@ -58,49 +58,49 @@ export default function HabitTrackerPage() {
                         key={habit.id}
                         onClick={() => updateTask(habit.id, { completed: !habit.completed })}
                         className={clsx(
-                            "group relative glass-card p-8 transition-all duration-300 cursor-pointer overflow-hidden",
+                            "group relative card p-8 transition-all duration-300 cursor-pointer overflow-hidden",
                             habit.completed 
                                 ? "bg-[var(--accent-soft)]" 
-                                : "hover:border-[var(--accent)]/30"
+                                : "hover:border-[var(--accent)]"
                         )}
                     >
                         <div className="flex flex-col gap-8">
                             <div className="flex items-center justify-between">
                                 <div className={clsx(
-                                    "w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300",
+                                    "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300",
                                     habit.completed 
-                                        ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20" 
-                                        : "bg-white/5 text-[var(--text-secondary)]/40"
+                                        ? "bg-[var(--accent)] text-white" 
+                                        : "bg-gray-100 text-[var(--text-secondary)]/40"
                                 )}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
                                 </div>
                                 <span className={clsx(
-                                    "text-[9px] font-black uppercase tracking-widest transition-colors",
-                                    habit.completed ? "text-[var(--accent)]" : "text-[var(--text-secondary)]/10"
+                                    "text-[10px] font-semibold transition-colors",
+                                    habit.completed ? "text-[var(--accent)]" : "text-[var(--text-secondary)]/20"
                                 )}>
-                                    {habit.completed ? 'COMPLETED' : 'PENDING'}
+                                    {habit.completed ? 'Completed' : 'Pending'}
                                 </span>
                             </div>
                             
                             <div>
                                 <h3 className={clsx(
-                                    "font-bold text-lg tracking-tight transition-all duration-300",
-                                    habit.completed ? "text-[var(--text-primary)]/30 line-through" : "text-[var(--text-primary)] group-hover:text-[var(--accent)]"
+                                    "font-semibold text-lg tracking-tight transition-all duration-300",
+                                    habit.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)] group-hover:text-[var(--accent)]"
                                 )}>
                                     {habit.title}
                                 </h3>
-                                <p className="text-[9px] font-bold text-[var(--text-secondary)]/30 uppercase tracking-[0.2em] mt-1">Daily Ritual</p>
+                                <p className="text-[10px] font-medium text-[var(--text-secondary)] mt-1">Daily habit</p>
                             </div>
                         </div>
                     </div>
                 ))}
                 
                 {/* Empty State / Add Placeholder */}
-                <div className="glass-card p-8 border-dashed border-white/5 flex flex-col items-center justify-center text-center group cursor-pointer hover:border-[var(--accent)]/30 transition-all">
-                    <div className="w-8 h-8 rounded-xl border border-white/5 flex items-center justify-center text-[var(--text-secondary)]/20 group-hover:text-[var(--accent)] transition-colors mb-4">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"><path d="M12 5v14M5 12h14"/></svg>
+                <div className="card p-8 border-dashed group cursor-pointer hover:border-[var(--accent)] flex flex-col items-center justify-center text-center">
+                    <div className="w-8 h-8 rounded-lg border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)]/40 group-hover:text-[var(--accent)] group-hover:border-[var(--accent)] transition-all mb-4">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
                     </div>
-                    <span className="text-[9px] font-bold text-[var(--text-secondary)]/20 uppercase tracking-widest group-hover:text-[var(--text-secondary)] transition-colors">Forge New Ritual</span>
+                    <span className="text-xs font-medium text-[var(--text-secondary)]/40 group-hover:text-[var(--text-secondary)] transition-all">Add new habit</span>
                 </div>
             </div>
         </div>

@@ -1,5 +1,7 @@
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 export type Category = 'Personal' | 'Work' | 'Health' | 'Study' | 'Finance' | 'Errands' | 'Habit' | 'Urgent';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'PAUSED' | 'COMPLETED';
+export type RepeatInterval = 'NONE' | 'DAILY' | 'WEEKLY';
 
 export interface User {
   uid: string;
@@ -26,7 +28,19 @@ export interface Task {
   version: number;
   subtasksJson?: string;
   notes?: string;
+  
+  // Execution Fields
+  status: TaskStatus;
   estimatedMins?: number;
+  actualMins: number;
+  startTime?: string | null;
+  endTime?: string | null;
+  completedAt?: string | null;
+  isTimerEnabled?: boolean;
+
+  // Scheduling Fields
+  scheduledAt?: string;
+  repeat: RepeatInterval;
 }
 
 export interface Habit extends Task {
