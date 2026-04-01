@@ -19,6 +19,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
     const [priority, setPriority] = useState<Priority>('MEDIUM');
     const [dueTime, setDueTime] = useState('');
     const [localDueDate, setLocalDueDate] = useState('');
+    const [isRecurring, setIsRecurring] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -32,6 +33,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
             setPriority('MEDIUM');
             setDueTime(initialDueTime || '');
             setLocalDueDate(initialDueDate || selectedDate || todayStr);
+            setIsRecurring(false);
             setIsSubmitting(false);
         }
     }, [isOpen, initialDueTime, initialDueDate, selectedDate, todayStr]);
@@ -56,7 +58,9 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                 title: trimmedTitle, 
                 priority, 
                 category,
-                dueTime: dueTime || null
+                dueTime: dueTime || null,
+                isRecurring,
+                ...(isRecurring && { recurrenceType: 'DAILY' })
             }, localDueDate);
             onClose();
         } catch (err) {
@@ -94,7 +98,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
             {/* Centered Modal */}
             <form 
                 onSubmit={handleSubmit}
-                className="relative card w-full max-w-[440px] p-8 shadow-2xl"
+                className="relative card w-[calc(100%-2rem)] md:w-full max-w-[440px] p-6 text-left md:p-8 shadow-2xl mx-auto"
             >
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex flex-col">
@@ -137,8 +141,8 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                             className={clsx(
                                 "h-11 rounded-xl border px-4 flex items-center gap-3 transition-all",
                                 localDueDate === todayStr 
-                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-lg shadow-red-100" 
-                                    : "bg-white border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
+                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" 
+                                    : "bg-[var(--card-bg)] border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
                             )}
                         >
                             <span className="text-sm font-semibold">Today</span>
@@ -152,8 +156,8 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                             className={clsx(
                                 "h-11 rounded-xl border px-4 flex items-center gap-3 transition-all",
                                 localDueDate === tomorrowStr 
-                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-lg shadow-red-100" 
-                                    : "bg-white border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
+                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" 
+                                    : "bg-[var(--card-bg)] border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
                             )}
                         >
                             <span className="text-sm font-semibold">Tomorrow</span>
@@ -167,7 +171,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                             type="date"
                             value={localDueDate}
                             onChange={(e) => setLocalDueDate(e.target.value)}
-                            className="w-full h-11 bg-gray-50/50 border border-[var(--border)] rounded-xl px-4 text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:bg-white transition-all cursor-pointer"
+                            className="w-full h-11 bg-[var(--bg-main)] border border-[var(--border)] rounded-xl px-4 text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:bg-[var(--card-bg)] transition-all cursor-pointer"
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]/40">
                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -183,8 +187,8 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                         <div className="relative">
                             <select 
                                 value={priority} 
-                                onChange={(e) => setPriority(e.target.value as Priority)}
-                                className="w-full h-10 pl-3 pr-10 bg-white border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
+                                onChange={(e) => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}
+                                className="w-full h-10 pl-3 pr-10 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
                             >
                                 <option value="LOW">Low</option>
                                 <option value="MEDIUM">Medium</option>
@@ -203,7 +207,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                             <select 
                                 value={dueTime} 
                                 onChange={(e) => setDueTime(e.target.value)}
-                                className="w-full h-10 pl-3 pr-10 bg-white border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
+                                className="w-full h-10 pl-3 pr-10 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
                             >
                                 <option value="">Not set</option>
                                 {timeOptions.map((t: any) => (
@@ -217,6 +221,23 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Recurrence Toggle */}
+                <div className="mb-10 flex items-center justify-between">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">Repeat daily</span>
+                        <span className="text-[10px] text-[var(--text-secondary)]">Create a new task instance every day</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={isRecurring}
+                            onChange={(e) => setIsRecurring(e.target.checked)}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent)]"></div>
+                    </label>
                 </div>
 
                 {/* Footer Actions */}

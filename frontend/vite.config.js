@@ -15,9 +15,17 @@ export default defineConfig({
       ],
     },
   },
-  // './' is required for Capacitor native builds —
-  // absolute paths break when served from the iOS WKWebView bundle
   base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          vendor: ['react', 'react-dom']
+        }
+      }
+    }
+  },
   plugins: [
     react(),
     VitePWA({

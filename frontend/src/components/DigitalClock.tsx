@@ -31,7 +31,7 @@ export default function DigitalClock() {
     const [hours, minutes, seconds] = timePart.split(':');
 
     return (
-        <div className="flex items-center gap-3 px-4 py-2 bg-white border border-[var(--border)] rounded-lg transition-all duration-300">
+        <div className="flex items-center gap-3 px-4 py-2 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg transition-all duration-300">
             {/* Hour Sector */}
             <div className="flex flex-col items-center">
                 <span className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">

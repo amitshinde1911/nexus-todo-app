@@ -90,7 +90,7 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (email: str
                                 type="email" 
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full bg-white border border-[var(--border)] rounded-md px-4 py-2.5 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] transition-all placeholder:text-[var(--text-secondary)]/30"
+                                className="w-full bg-[var(--card-bg)] border border-[var(--border)] rounded-md px-4 py-2.5 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] transition-all placeholder:text-[var(--text-secondary)]/30"
                                 placeholder="name@example.com"
                                 required
                             />
@@ -102,7 +102,7 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (email: str
                                 type="password" 
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full bg-white border border-[var(--border)] rounded-md px-4 py-2.5 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] transition-all placeholder:text-[var(--text-secondary)]/30"
+                                className="w-full bg-[var(--card-bg)] border border-[var(--border)] rounded-md px-4 py-2.5 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)] transition-all placeholder:text-[var(--text-secondary)]/30"
                                 placeholder="Your secure password"
                                 required
                             />
@@ -135,7 +135,7 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (email: str
                                 <div className="w-full border-t border-[var(--border)]"></div>
                             </div>
                             <div className="relative flex justify-center text-[11px]">
-                                <span className="bg-white px-3 text-[var(--text-secondary)]">Or continue with</span>
+                                <span className="bg-[var(--card-bg)] px-3 text-[var(--text-secondary)]">Or continue with</span>
                             </div>
                         </div>
 
@@ -143,7 +143,7 @@ export default function AuthPage({ onAuthSuccess }: { onAuthSuccess: (email: str
                             type="button"
                             onClick={handleGoogleLogin}
                             disabled={loading || googleLoading}
-                            className="w-full flex items-center justify-center gap-3 py-2.5 bg-white border border-[var(--border)] rounded-md text-sm font-medium hover:bg-gray-50 transition-all"
+                            className="w-full flex items-center justify-center gap-3 py-2.5 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-sm font-medium hover:bg-gray-50 transition-all"
                         >
                             {googleLoading ? (
                                 <div className="w-4 h-4 border-2 border-[var(--border)] border-t-[var(--accent)] rounded-full animate-spin" />

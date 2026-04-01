@@ -15,17 +15,17 @@
     --hover: #F9FAFB;
   }
 
-  /* Force Light Theme for Todoist aesthetic */
+  /* Dark Theme */
   .dark {
-    --bg-main: #FAFAFA;
-    --bg-sidebar: #F3F4F6;
-    --card-bg: #FFFFFF;
-    --border: #E5E7EB;
-    --text-primary: #111827;
-    --text-secondary: #6B7280;
-    --accent: #DC2626;
-    --accent-soft: #FEE2E2;
-    --hover: #F9FAFB;
+    --bg-main: #111827;      /* gray-900 */
+    --bg-sidebar: #1F2937;    /* gray-800 */
+    --card-bg: #1F2937;
+    --border: #374151;        /* gray-700 */
+    --text-primary: #F9FAFB;  /* gray-50 */
+    --text-secondary: #9CA3AF; /* gray-400 */
+    --accent: #EF4444;        /* red-500 */
+    --accent-soft: rgba(239, 68, 68, 0.1);
+    --hover: #374151;
   }
 
   body {
@@ -33,6 +33,7 @@
     color: var(--text-primary);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   * {
@@ -67,7 +68,7 @@
   }
 
   .card {
-    @apply rounded-[10px] border border-[var(--border)] bg-white;
+    @apply rounded-[10px] border border-[var(--border)] bg-[var(--card-bg)] transition-colors duration-200;
   }
 
   /* Button System: Todoist Style */

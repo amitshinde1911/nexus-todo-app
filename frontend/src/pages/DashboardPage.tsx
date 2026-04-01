@@ -7,14 +7,46 @@ import { clsx } from '../lib/utils';
 import TaskSkeleton from '../components/TaskSkeleton';
 import TodoItem from '../components/TodoItem';
 import DigitalClock from '../components/DigitalClock';
+import RoutineBuilderModal from '../components/RoutineBuilderModal';
 
-export default function DashboardPage() {
+interface DashboardProps {
+    setTab?: (tab: string) => void;
+}
+
+export default function DashboardPage({ setTab }: DashboardProps) {
     const { user } = useAuthContext();
-    const { tasks, loading, addTask, updateTask, deleteTask, startTask, pauseTask, stopTask } = useTasks(user?.uid);
+    const { 
+        tasks, templates, loading, updateTask, deleteTask, startTask, pauseTask, stopTask, 
+        startExecutionSession, exitExecutionSession, executeProtocol, addTask 
+    } = useTasks(user?.uid);
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [priorityFilter, setPriorityFilter] = useState('ALL');
     const [filterMode, setFilterMode] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
+    const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+
+    const routineTemplate = templates?.find(t => t.isRitual && !t.deleted);
+
+    const handleSaveRoutine = async (title: string, steps: any[]) => {
+        if (routineTemplate) {
+            await updateTask(routineTemplate.id, { title, subtasksJson: JSON.stringify(steps) });
+        } else if (addTask) {
+            await addTask({
+                title,
+                priority: 'URGENT',
+                category: 'Habit',
+                dueDate: '',
+                dueTime: '06:00',
+                repeat: 'DAILY',
+                isRecurring: true,
+                recurrenceType: 'DAILY',
+                isRitual: true,
+                subtasksJson: JSON.stringify(steps),
+                notes: "My defined protocol."
+            });
+        }
+        success?.("Routine updated successfully!");
+    };
 
     const { success } = useToast() || {};
 
@@ -91,6 +123,61 @@ export default function DashboardPage() {
                             </span>
                         )}
                     </div>
+                    
+                    {/* Execution Mode Controls */}
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                        {activeTasks.some(t => t.isExecutionMode) ? (
+                            <>
+                                <button 
+                                    onClick={() => setTab && setTab('FOCUS')}
+                                    className="btn-primary animate-pulse flex items-center gap-2 px-5"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                    Resume Execution
+                                </button>
+                                <button 
+                                    onClick={exitExecutionSession}
+                                    className="btn-secondary text-red-500 hover:bg-red-50 hover:border-red-200 border-transparent px-5 flex items-center gap-2"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    Exit Mode
+                                </button>
+                            </>
+                        ) : (
+                            <div className="flex flex-wrap items-center gap-3">
+                                <button 
+                                    onClick={() => {
+                                        if (!routineTemplate) {
+                                            setIsBuilderOpen(true);
+                                            return;
+                                        }
+                                        if (setTab && executeProtocol && routineTemplate) executeProtocol(routineTemplate.id, setTab);
+                                    }}
+                                    className="btn-primary flex items-center gap-2 px-6 bg-gradient-to-r from-emerald-500 to-teal-500 border-0 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transform hover:-translate-y-0.5 transition-all text-white font-semibold"
+                                >
+                                    <span className="text-base mr-1">🚀</span>
+                                    {routineTemplate ? 'Start Morning Protocol' : 'Setup Morning Protocol'}
+                                </button>
+                                <button 
+                                    onClick={() => setIsBuilderOpen(true)} 
+                                    className="btn-secondary px-4 !h-10 text-xs font-semibold hover:bg-[var(--hover)] flex items-center gap-2 transition-all border border-[var(--border)]"
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                    Edit Routine
+                                </button>
+                                <button 
+                                    onClick={async () => {
+                                        await startExecutionSession?.();
+                                        if (setTab) setTab('FOCUS');
+                                    }}
+                                    className="btn-secondary flex items-center gap-2 px-6 !h-10 hover:bg-[var(--hover)] transition-all outline-none"
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                    Execute Daily Tasks
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <DigitalClock />
@@ -102,7 +189,7 @@ export default function DashboardPage() {
                 {/* PRIMARY COLUMN: Tasks */}
                 <div className="lg:col-span-2 space-y-8">
                     {/* Metric Quick-View (Horizontal Row) */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <button 
                             onClick={() => setFilterMode('ALL')}
                             className={clsx(
@@ -171,14 +258,14 @@ export default function DashboardPage() {
                                         placeholder="Search tasks..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="bg-white border border-[var(--border)] rounded-md px-3 py-1.5 text-xs w-40 focus:w-56 focus:border-[var(--accent)] transition-all outline-none placeholder:text-[var(--text-secondary)]/40"
+                                        className="bg-[var(--card-bg)] border border-[var(--border)] rounded-md px-3 py-1.5 text-xs w-40 focus:w-56 focus:border-[var(--accent)] transition-all outline-none placeholder:text-[var(--text-secondary)]/40"
                                     />
                                     <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]/30" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                                 </div>
                                 <select 
                                     value={priorityFilter}
                                     onChange={(e) => setPriorityFilter(e.target.value)}
-                                    className="bg-white border border-[var(--border)] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[var(--accent)] transition-all cursor-pointer text-[var(--text-secondary)]"
+                                    className="bg-[var(--card-bg)] border border-[var(--border)] rounded-md px-3 py-1.5 text-xs outline-none focus:border-[var(--accent)] transition-all cursor-pointer text-[var(--text-secondary)]"
                                 >
                                     <option value="ALL">All priorities</option>
                                     <option value="URGENT">Urgent</option>
@@ -288,6 +375,13 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            <RoutineBuilderModal 
+                isOpen={isBuilderOpen}
+                onClose={() => setIsBuilderOpen(false)}
+                template={routineTemplate}
+                onSave={handleSaveRoutine}
+            />
         </div>
     );
 }

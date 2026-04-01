@@ -81,7 +81,7 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
                                 draggable={!t.completed}
                                 onDragStart={(e) => handleDragStart(e, t.id)}
                                 className={clsx(
-                                    "flex-shrink-0 min-w-[180px] p-5 bg-white border border-[var(--border)] rounded-xl transition-all group",
+                                    "flex-shrink-0 min-w-[180px] p-5 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl transition-all group",
                                     !t.completed ? "cursor-grab active:cursor-grabbing hover:border-[var(--accent)]" : "opacity-60 grayscale-[0.5] border-dashed"
                                 )}
                             >
@@ -113,7 +113,7 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
                                             onClick={(e) => { e.stopPropagation(); onStartTask?.(t.id); }}
                                             className={clsx(
                                                 "w-5 h-5 rounded-full flex items-center justify-center transition-all",
-                                                t.status === 'PAUSED' ? "bg-amber-50 text-amber-500" : "bg-gray-50 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
+                                                t.status === 'PAUSED' ? "bg-amber-500/10 text-amber-500" : "bg-[var(--bg-main)] text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
                                             )}
                                             title={t.status === 'PAUSED' ? "Resume" : "Start"}
                                         >
@@ -141,7 +141,7 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
 
             {/* Vertical Timeline Grid */}
             <div className="card overflow-hidden">
-                <div className="px-6 py-4 border-b border-[var(--border)] bg-gray-50/50">
+                <div className="px-6 py-4 border-b border-[var(--border)] bg-[var(--card-bg)]/50">
                     <h3 className="text-xs font-semibold text-[var(--text-primary)]">Daily timeline</h3>
                 </div>
                 
@@ -183,7 +183,7 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
 
                                 {/* Card Slot */}
                                 <div 
-                                    className="flex-1 p-3 min-h-[100px] flex flex-col gap-2 group-hover:bg-gray-50/50 transition-colors cursor-pointer relative"
+                                    className="flex-1 p-3 min-h-[100px] flex flex-col gap-2 group-hover:bg-[var(--bg-main)] transition-colors cursor-pointer relative"
                                     onClick={() => onCreateInSlot?.(selectedDate, `${hour.toString().padStart(2, '0')}:00`)}
                                 >
                                     {/* Slot Hover Indicator */}
@@ -199,8 +199,8 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
                                             draggable={!t.completed}
                                             onDragStart={(e) => handleDragStart(e, t.id)}
                                             className={clsx(
-                                                "bg-white border border-[var(--border)] p-4 rounded-xl flex justify-between items-center transition-all group/task",
-                                                !t.completed ? "cursor-grab active:cursor-grabbing hover:border-[var(--accent)]" : "opacity-60 bg-gray-50/50"
+                                                "bg-[var(--card-bg)] border border-[var(--border)] p-4 rounded-xl flex justify-between items-center transition-all group/task",
+                                                !t.completed ? "cursor-grab active:cursor-grabbing hover:border-[var(--accent)]" : "opacity-60 bg-[var(--bg-main)]"
                                             )}
                                         >
                                             <div className="flex items-center gap-3">
@@ -240,7 +240,7 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
                                                         onClick={(e) => { e.stopPropagation(); onStartTask?.(t.id); }}
                                                         className={clsx(
                                                             "w-5 h-5 rounded-full flex items-center justify-center transition-all",
-                                                            t.status === 'PAUSED' ? "bg-amber-50 text-amber-500" : "bg-gray-50 text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
+                                                            t.status === 'PAUSED' ? "bg-amber-500/10 text-amber-500" : "bg-[var(--bg-main)] text-[var(--text-secondary)] hover:bg-[var(--accent-soft)]"
                                                         )}
                                                         title={t.status === 'PAUSED' ? "Resume" : "Start"}
                                                     >
@@ -266,7 +266,7 @@ export default function DailyPlanner({ todos, selectedDate, onUpdateMetadata, on
                         <span className="text-xs font-medium text-red-600">Careful: You have a lot scheduled for today. Take it easy!</span>
                     </div>
                 ) : (
-                    <div className="bg-white px-6 py-4 rounded-xl border border-[var(--border)] flex items-center gap-4">
+                    <div className="bg-[var(--card-bg)] px-6 py-4 rounded-xl border border-[var(--border)] flex items-center gap-4">
                         <span className="text-xl">✨</span> 
                         <span className="text-xs font-medium text-[var(--text-secondary)]">Your schedule looks great! Ready to focus.</span>
                     </div>

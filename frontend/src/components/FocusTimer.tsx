@@ -21,14 +21,29 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
     const [ambientSound, setAmbientSound] = useState('none');
     const [distractions, setDistractions] = useState(0);
     const [sessionCount, setSessionCount] = useState(0);
+    const [showReward, setShowReward] = useState(false);
+
+    const [loadedTaskId, setLoadedTaskId] = useState<string | null>(null);
+    const [loadedStepId, setLoadedStepId] = useState<string | null>(null);
+
+    // Ritual Parsing
+    const ritualSteps = React.useMemo(() => {
+        if (!focusTask || !focusTask.isRitual) return [];
+        try { return JSON.parse(focusTask.subtasksJson || '[]'); } 
+        catch (e) { return []; }
+    }, [focusTask]);
+
+    const activeStepIndex = ritualSteps.findIndex((s: any) => !s.completed);
+    const activeStep = activeStepIndex >= 0 ? ritualSteps[activeStepIndex] : null;
 
     // Derive active task display
-    const activeTaskTitle = focusTask ? focusTask.title : null;
-    const activeTaskSource = focusTask ? (
-        focusTask.priority === 'URGENT' || focusTask.priority === 'HIGH'
-            ? "High Priority"
-            : "Active Task"
-    ) : null;
+    const activeTaskTitle = focusTask 
+        ? (focusTask.isRitual && activeStep ? activeStep.title : focusTask.title) 
+        : null;
+        
+    const activeTaskSource = focusTask 
+        ? (focusTask.isRitual && activeStep ? `Step ${activeStepIndex + 1} of ${ritualSteps.length} • Morning Ritual` : (focusTask.priority === 'URGENT' || focusTask.priority === 'HIGH' ? "High Priority" : "Active Task")) 
+        : null;
 
     const estimatedSessions = focusTask
         ? Math.max(1, Math.ceil((focusTask.estimatedMins || 25) / durationMins))
@@ -38,21 +53,46 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
         : null;
 
     useEffect(() => {
-        if (focusTask?.status === 'IN_PROGRESS' && focusTask.startTime) {
+        // Smart Timer / Focus Flow Dynamics
+        if (!focusTask) return;
+        
+        const isNewTask = loadedTaskId !== focusTask.id;
+        const isNewStep = focusTask.isRitual && loadedStepId !== activeStep?.id;
+
+        if (isNewTask || isNewStep) {
+            let optimalMins = 25;
+            if (focusTask.isRitual && activeStep && activeStep.duration) {
+                optimalMins = activeStep.duration;
+            } else if (!focusTask.isRitual) {
+                if (focusTask.priority === 'URGENT') optimalMins = 50;
+                else if (focusTask.priority === 'HIGH') optimalMins = 45;
+                else if (focusTask.priority === 'MEDIUM') optimalMins = 30;
+                else if (focusTask.priority === 'LOW') optimalMins = 20;
+            }
+
+            setDurationMins(optimalMins);
+            setTimeLeft(optimalMins * 60);
+            setTotalDuration(optimalMins * 60);
+            setLoadedTaskId(focusTask.id);
+            setLoadedStepId(focusTask.isRitual ? activeStep?.id : null);
+        }
+    }, [focusTask, activeStep, loadedTaskId, loadedStepId]);
+
+    useEffect(() => {
+        if (focusTask?.status === 'IN_PROGRESS' && focusTask.startTime && !focusTask.isRitual) {
             const remaining = (durationMins * 60) - secondsElapsed;
             setTimeLeft(Math.max(0, remaining));
             setIsActive(remaining > 0);
-        } else {
-            // Default behavior if no active task is synced
-            // We'll keep the manual timer state for now if user just wants a generic timer
         }
-    }, [secondsElapsed, focusTask?.status, durationMins]);
+    }, [secondsElapsed, focusTask?.status, durationMins, focusTask?.isRitual]);
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval> | null = null;
         
-        // Only run manual interval if NOT synced to a task
-        if (!focusTask?.startTime && isActive && timeLeft > 0) {
+        // Use local interval for rituals, OR if no global start time
+        const useLocalTimer = !focusTask?.startTime || focusTask?.isRitual;
+
+        if (useLocalTimer && isActive && timeLeft > 0) {
             interval = setInterval(() => {
                 setTimeLeft(t => t - 1);
             }, 1000);
@@ -60,9 +100,14 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
             setIsActive(false);
             setSessionCount(s => s + 1);
             if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 400]);
+            
+            // Auto complete step logic if timer rings on ritual
+            if (focusTask?.isRitual && activeStep) {
+                 handleCompleteTask(); // Auto move to next step when timer is up
+            }
         }
         return () => { if (interval) clearInterval(interval); };
-    }, [isActive, timeLeft, focusTask?.startTime]);
+    }, [isActive, timeLeft, focusTask?.startTime, focusTask?.isRitual]);
 
     const setPreset = (mins: number) => {
         setIsActive(false);
@@ -72,13 +117,14 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
     };
 
     const toggleTimer = async () => {
-        if (focusTask) {
+        if (focusTask && !focusTask.isRitual) {
             if (focusTask.status === 'IN_PROGRESS') {
                 await onPauseTask?.(focusTask.id);
             } else {
                 await onStartTask?.(focusTask.id);
             }
         } else {
+            // For rituals, we handle start/stop completely locally to avoid global sync issues per step
             setIsActive(!isActive);
         }
     };
@@ -86,11 +132,74 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
     const handleLogDistraction = () => setDistractions(prev => prev + 1);
 
     const handleCompleteTask = async () => {
-        if (focusTask && onStopTask) {
-            setIsActive(false);
-            await onStopTask(focusTask.id);
+        if (!focusTask) return;
+        setIsActive(false);
+
+        if (focusTask.isRitual && activeStep && onUpdateTask) {
+            const updatedSteps = ritualSteps.map((s: any) => 
+                s.id === activeStep.id ? { ...s, completed: true } : s
+            );
+            
+            const isLastStep = updatedSteps.every((s: any) => s.completed);
+            
+            if (isLastStep) {
+                setShowReward(true);
+                await onUpdateTask(focusTask.id, { subtasksJson: JSON.stringify(updatedSteps) });
+                if (onStopTask) await onStopTask(focusTask.id);
+            } else {
+                await onUpdateTask(focusTask.id, { subtasksJson: JSON.stringify(updatedSteps) });
+                setIsActive(true); // Auto-start the next step
+            }
+        } else {
+            if (onStopTask) await onStopTask(focusTask.id);
         }
     };
+    
+    // Add skip logic for rituals
+    const handleSkipStep = async () => {
+        if (!focusTask || !focusTask.isRitual || !activeStep || !onUpdateTask) return;
+        const updatedSteps = ritualSteps.map((s: any) => 
+            s.id === activeStep.id ? { ...s, completed: true } : s
+        );
+        const isLastStep = updatedSteps.every((s: any) => s.completed);
+        
+        if (isLastStep) {
+            setShowReward(true);
+            await onUpdateTask(focusTask.id, { subtasksJson: JSON.stringify(updatedSteps) });
+            if (onStopTask) await onStopTask(focusTask.id);
+        } else {
+            await onUpdateTask(focusTask.id, { subtasksJson: JSON.stringify(updatedSteps) });
+            setIsActive(true); 
+        }
+    };
+
+    if (showReward) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 animate-fade-in relative z-20">
+                <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-emerald-500/20">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent mb-2">Protocol Completed!</h2>
+                <p className="text-[var(--text-secondary)] font-medium mb-8">You successfully executed all steps of your routine.</p>
+                <div className="flex gap-6 mb-12">
+                    <div className="flex flex-col items-center bg-[var(--card-bg)] p-4 rounded-2xl shadow-sm border border-[var(--border)] min-w-[120px]">
+                        <span className="text-3xl font-bold text-emerald-600 mb-1">+1</span>
+                        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Day Streak</span>
+                    </div>
+                    <div className="flex flex-col items-center bg-[var(--card-bg)] p-4 rounded-2xl shadow-sm border border-[var(--border)] min-w-[120px]">
+                        <span className="text-3xl font-bold text-teal-600 mb-1">+15</span>
+                        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Focus Points</span>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => { setShowReward(false); setTab && setTab('TODAY'); }}
+                    className="btn-primary flex items-center gap-2 px-8 py-4 bg-gray-900 hover:bg-black text-white rounded-xl font-bold transition-all transform hover:scale-105"
+                >
+                    Return to Dashboard
+                </button>
+            </div>
+        );
+    }
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -121,7 +230,7 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
             <div className="absolute inset-0 bg-[var(--bg-main)] z-0" />
 
             {/* Session Preset Bar */}
-            <div className="relative z-10 w-full max-w-xs flex p-1 bg-white border border-[var(--border)] rounded-lg mb-12">
+            <div className="relative z-10 w-full max-w-xs flex p-1 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg mb-12">
                 {presets.map(p => (
                     <button
                         key={p.mins}
@@ -151,25 +260,51 @@ export default function FocusTimer({ focusTask, setTab, onUpdateTask, onStartTas
                         <h2 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">
                             {activeTaskTitle}
                         </h2>
-                        {sessionLabel && (
+                        
+                        {focusTask?.isRitual && ritualSteps.length > 0 && (
+                            <div className="flex items-center justify-center gap-2 mt-2 mb-4">
+                                {ritualSteps.map((step: any, idx: number) => (
+                                    <div 
+                                        key={idx} 
+                                        className={clsx(
+                                            "h-1.5 rounded-full transition-all duration-500",
+                                            step.completed ? "w-4 bg-emerald-500" : (idx === activeStepIndex ? "w-6 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "w-1.5 bg-[var(--border)]")
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {sessionLabel && !focusTask?.isRitual && (
                             <p className="text-xs text-[var(--text-secondary)]">
                                 Session {sessionLabel}
                             </p>
                         )}
                         
                         <div className="flex flex-col gap-2 mt-6">
-                            <button
-                                onClick={handleCompleteTask}
-                                className="btn-primary !h-9 text-xs"
-                            >
-                                Complete task
-                            </button>
-                            <button
-                                onClick={() => setTab && setTab('TODAY')}
-                                className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all"
-                            >
-                                Change task
-                            </button>
+                            {(!focusTask?.isRitual || focusTask?.isRitual) && (
+                                <button
+                                    onClick={handleCompleteTask}
+                                    className="btn-primary !h-10 text-sm shadow-md"
+                                >
+                                    {focusTask?.isRitual && activeStep ? "Complete Step" : "Complete task"}
+                                </button>
+                            )}
+                            {focusTask?.isRitual ? (
+                                <button
+                                    onClick={handleSkipStep}
+                                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all mt-2"
+                                >
+                                    Skip this step
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setTab && setTab('TODAY')}
+                                    className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all"
+                                >
+                                    Change task
+                                </button>
+                            )}
                         </div>
                     </div>
                 ) : (

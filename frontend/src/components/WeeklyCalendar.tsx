@@ -80,7 +80,7 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate, onCreateInD
                     "relative flex-1 flex flex-col items-center justify-center py-4 rounded-xl cursor-pointer transition-all duration-300",
                     isSelected 
                         ? "bg-[var(--accent)] text-white shadow-lg shadow-red-100" 
-                        : "hover:bg-gray-50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        : "hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 )}
             >
                 <span className={clsx(
@@ -101,7 +101,7 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate, onCreateInD
                 <button
                     onClick={(e) => { e.stopPropagation(); onCreateInDate?.(dateStr); }}
                     className={clsx(
-                        "absolute -bottom-2 w-6 h-6 rounded-full bg-white border border-[var(--border)] shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[var(--accent)] hover:text-white transition-all transform hover:scale-110",
+                        "absolute -bottom-2 w-6 h-6 rounded-full bg-[var(--card-bg)] border border-[var(--border)] shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-[var(--accent)] hover:text-white transition-all transform hover:scale-110",
                         isSelected && "group-hover:translate-x-1"
                     )}
                 >
@@ -138,7 +138,7 @@ export default function WeeklyCalendar({ selectedDate, onSelectDate, onCreateInD
                 onTouchStart={handleTouchStart} 
                 onTouchMove={handleTouchMove} 
                 onTouchEnd={handleTouchEnd}
-                className="relative flex gap-1 p-1 bg-white border border-[var(--border)] rounded-2xl"
+                className="relative flex gap-1 p-1 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl"
             >
                 {days}
             </div>
