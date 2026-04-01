@@ -1,20 +1,15 @@
 {
-  "hosting": {
-    "public": "dist",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
+  "projects": {
+    "default": "todo-36bbd"
   },
-  "firestore": {
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  }
+  "targets": {
+    "todo-36bbd": {
+      "hosting": {
+        "production": [
+          "todo-36bbd"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
