@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
+import App from './App';
 import { SyncProvider } from './components/SyncProvider';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './components/ToastProvider';

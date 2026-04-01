@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { clsx } from '../lib/utils';
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -196,7 +196,7 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
                         </div>
                     ) : (
                         <div className="space-y-8">
-                            {categoryCounts.map((cat, idx) => {
+                            {categoryCounts.map((cat) => {
                                 const pct = Math.round((cat.count / completedCount) * 100);
                                 return (
                                     <div key={cat.name} className="group">

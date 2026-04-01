@@ -1,4 +1,3 @@
-import React from 'react';
 import { clsx } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
 

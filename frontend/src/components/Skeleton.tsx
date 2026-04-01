@@ -1,4 +1,3 @@
-import React from 'react';
 import { clsx } from '../lib/utils';
 
 export function Skeleton({ className, variant = 'rect' }: { className?: string, variant?: 'rect' | 'circle' }) {
