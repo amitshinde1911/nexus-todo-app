@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTasks } from '../hooks/useTasks';
 import { useAuthContext } from '../context/AuthContext';
 import { clsx } from '../lib/utils';

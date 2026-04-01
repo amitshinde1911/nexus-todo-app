@@ -1,4 +1,3 @@
-import React from 'react';
 import { useAuthContext } from '../context/AuthContext';
 import { useTasks } from '../hooks/useTasks';
 import TaskSkeleton from '../components/TaskSkeleton';

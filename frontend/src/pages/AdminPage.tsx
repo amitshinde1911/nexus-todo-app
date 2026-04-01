@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { logService } from '../services/logService';
 import { AppLog } from '../types';
-import { clsx } from '../lib/utils';
 
 export default function AdminPage() {
     const [logs, setLogs] = useState<AppLog[]>([]);

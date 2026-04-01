@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { db as localDb } from '../db';
 import { auth, db as cloudDb } from '../config/firebase';
 import { onAuthStateChanged } from 'firebase/auth';

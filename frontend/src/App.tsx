@@ -18,14 +18,12 @@ const TrashPage = lazy(() => import('./pages/TrashPage')) as React.ComponentType
 
 import TodoInput from './components/TodoInput';
 import { clsx } from './lib/utils';
-import TodoItem from './components/TodoItem';
 import { useIsMobile } from './hooks/useIsMobile';
 
 const AppContent: React.FC = () => {
   const { user, loading: authLoading } = useAuthContext();
   const { 
-      tasks, rituals, addTask, updateTask, deleteTask, startTask, pauseTask, stopTask, 
-      executeProtocol 
+      tasks, rituals, addTask, updateTask, startTask, pauseTask, stopTask 
   } = useTasks(user?.uid);
   const { success } = useToast() || {};
   const [tab, setTab] = useState('TODAY');
@@ -33,7 +31,6 @@ const AppContent: React.FC = () => {
   const [inputContext, setInputContext] = useState<{ date?: string, time?: string } | null>(null);
   
   const isMobile = useIsMobile();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const openTaskModal = (context?: { date?: string, time?: string }) => {
     setInputContext(context || null);
