@@ -41,6 +41,20 @@ export interface Task {
   // Scheduling Fields
   scheduledAt?: string;
   repeat: RepeatInterval;
+
+  // Auto Execution System
+  isExecutionMode?: boolean;
+  executionOrder?: number;
+  isLocked?: boolean;
+
+  // Recurring Template System
+  isRecurring?: boolean;
+  recurrenceType?: 'DAILY' | 'WEEKLY' | 'CUSTOM';
+  recurrenceDays?: number[]; // [0,1,2,3,4,5,6] -> Sun, Mon, Tue etc.
+  lastGeneratedDate?: string;
+
+  // Ritual Engine
+  isRitual?: boolean;
 }
 
 export interface Habit extends Task {

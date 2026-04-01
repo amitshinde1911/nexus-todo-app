@@ -43,12 +43,13 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
         id: string;
         title: string;
         completed: boolean;
+        duration?: number;
     }
 
     let subtasks: Subtask[] = [];
     try { subtasks = JSON.parse(todo.subtasksJson || '[]'); } catch (e) {}
 
-    const theme = PRIORITY_THEMES[todo.priority] || { border: 'border-white/5', dot: 'bg-muted', text: 'text-muted-foreground', bg: 'bg-white/5' };
+    const theme = PRIORITY_THEMES[todo.priority] || { border: 'border-white/5', dot: 'bg-muted', text: 'text-muted-foreground', bg: 'bg-[var(--card-bg)]/5' };
     const completedSubs = subtasks.filter(s => s.completed).length;
 
     const handleSaveEdit = () => {
@@ -82,6 +83,16 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
         onUpdateMetadata(todo.id, { subtasksJson: JSON.stringify(updated) });
     };
 
+    const handleDeleteSubtask = (subId: string) => {
+        const updated = subtasks.filter(s => s.id !== subId);
+        onUpdateMetadata(todo.id, { subtasksJson: JSON.stringify(updated) });
+    };
+
+    const handleEditSubtask = (subId: string, newTitle: string) => {
+        const updated = subtasks.map(s => s.id === subId ? { ...s, title: newTitle } : s);
+        onUpdateMetadata(todo.id, { subtasksJson: JSON.stringify(updated) });
+    };
+
     const handleNotesBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
         if (todo.notes !== e.target.value)
             onUpdateMetadata(todo.id, { notes: e.target.value });
@@ -89,15 +100,23 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
 
     return (
         <div
+            title={todo.isLocked ? "Locked - Complete active task first" : undefined}
             className={clsx(
-                "group relative px-4 py-3 transition-colors hover:bg-[var(--hover)]",
-                todo.completed && !expanded && "opacity-60"
+                "group relative px-4 py-3 transition-all",
+                !todo.isLocked && "hover:bg-[var(--hover)]",
+                todo.completed && !expanded && "opacity-60",
+                todo.isLocked && "opacity-40 grayscale select-none cursor-not-allowed",
+                todo.isExecutionMode && !todo.isLocked && !todo.completed && "bg-emerald-50/30 shadow-[inset_3px_0_0_0_#10b981]"
             )}
+            onClickCapture={(e) => {
+                if (todo.isLocked) { e.stopPropagation(); e.preventDefault(); }
+            }}
         >
             <div className="flex items-center gap-4">
                 {/* Minimalist Checkbox */}
                 <button
-                    onClick={(e) => { e.stopPropagation(); onToggle(todo); }}
+                    disabled={todo.isLocked}
+                    onClick={(e) => { e.stopPropagation(); if(!todo.isLocked) onToggle(todo); }}
                     className={clsx(
                         "w-5 h-5 rounded-full border flex items-center justify-center transition-all shrink-0",
                         todo.completed 
@@ -112,7 +131,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                     )}
                 </button>
 
-                    <div className="flex-1 min-w-0" onClick={() => setExpanded(!expanded)}>
+                    <div className={clsx("flex-1 min-w-0", !todo.isLocked && "cursor-pointer")} onClick={() => { if(!todo.isLocked) setExpanded(!expanded) }}>
                         {isEditing ? (
                             <input
                                 ref={editInputRef}
@@ -122,11 +141,11 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                                 onBlur={handleSaveEdit}
                                 onKeyDown={handleKeyDown}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full bg-white border border-[var(--accent)] outline-none text-sm font-medium text-[var(--text-primary)] px-2 py-0.5 rounded transition-all"
+                                className="w-full bg-[var(--card-bg)] border border-[var(--accent)] outline-none text-sm font-medium text-[var(--text-primary)] px-2 py-0.5 rounded transition-all"
                             />
                         ) : (
                             <span 
-                                onDoubleClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                                onDoubleClick={(e) => { e.stopPropagation(); if(!todo.isLocked) setIsEditing(true); }}
                                 className={clsx(
                                     "text-sm font-medium transition-all block truncate",
                                     todo.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
@@ -211,7 +230,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className={clsx("flex items-center gap-2 shrink-0 transition-opacity", todo.isLocked ? "opacity-0 pointer-events-none" : "opacity-0 group-hover:opacity-100")}>
                         {/* Start/Pause/Stop Buttons */}
                         <div className="flex items-center gap-1">
                             {todo.status === 'IN_PROGRESS' ? (
@@ -274,31 +293,57 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                             </div>
                             <div className="space-y-2">
                                 {subtasks.map(sub => (
-                                    <div key={sub.id} className="flex items-center gap-3 group/sub">
+                                    <div key={sub.id} className="flex items-center gap-2 group/sub w-full">
                                         <button
                                             onClick={() => handleToggleSubtask(sub.id)}
                                             className={clsx(
-                                                "w-4 h-4 rounded border flex items-center justify-center transition-all",
-                                                sub.completed ? "bg-emerald-500 border-emerald-500" : "bg-white border-[var(--border)] group-hover/sub:border-[var(--accent)]"
+                                                "w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0",
+                                                sub.completed ? "bg-emerald-500 border-emerald-500" : "bg-[var(--card-bg)] border-[var(--border)] group-hover/sub:border-[var(--accent)]"
                                             )}
                                         >
                                             {sub.completed && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                         </button>
-                                        <span className={clsx("text-xs transition-all", sub.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]")}>
-                                            {sub.title}
-                                        </span>
+                                        <input 
+                                            type="text"
+                                            value={sub.title}
+                                            onChange={(e) => handleEditSubtask(sub.id, e.target.value)}
+                                            className={clsx(
+                                                "w-full text-xs transition-all bg-transparent outline-none py-1 border-b border-transparent focus:border-[var(--border)]", 
+                                                sub.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
+                                            )}
+                                        />
+                                        <button 
+                                            onClick={() => handleDeleteSubtask(sub.id)}
+                                            className="text-[var(--text-secondary)] hover:text-red-500 opacity-0 group-hover/sub:opacity-100 transition-opacity p-1 flex-shrink-0"
+                                            title="Delete subtask"
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        </button>
                                     </div>
                                 ))}
                                 <div className="pt-1">
-                                    <div className="relative">
+                                    <div className="relative flex items-center gap-2">
                                         <input
                                             type="text"
                                             value={newSubtask}
                                             onChange={e => setNewSubtask(e.target.value)}
                                             onKeyDown={handleAddSubtask}
-                                            placeholder="Add a subtask..."
-                                            className="w-full bg-white border border-[var(--border)] rounded-md px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none focus:border-[var(--accent)] transition-all"
+                                            placeholder="Add a subtask... (Press Enter)"
+                                            className="w-full bg-[var(--card-bg)] border border-[var(--border)] rounded-md px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none focus:border-[var(--accent)] transition-all"
                                         />
+                                        <button 
+                                            onClick={() => {
+                                                if(newSubtask.trim()) {
+                                                    const newSub = { id: crypto.randomUUID(), title: newSubtask.trim(), completed: false };
+                                                    const updated = [...subtasks, newSub];
+                                                    onUpdateMetadata(todo.id, { subtasksJson: JSON.stringify(updated) });
+                                                    setNewSubtask('');
+                                                }
+                                            }}
+                                            className="bg-[var(--accent)] text-white p-1.5 rounded flex items-center justify-center flex-shrink-0 hover:bg-red-700 transition-colors"
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -312,7 +357,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                                 onChange={e => setNotes(e.target.value)}
                                 onBlur={handleNotesBlur}
                                 placeholder="Thoughts, details, or contexts..."
-                                className="w-full min-h-[120px] bg-white border border-[var(--border)] rounded-md p-3 text-xs leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none focus:border-[var(--accent)] transition-all resize-none"
+                                className="w-full min-h-[120px] bg-[var(--card-bg)] border border-[var(--border)] rounded-md p-3 text-xs leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none focus:border-[var(--accent)] transition-all resize-none"
                             />
                         </div>
                     </div>
@@ -343,8 +388,8 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
 
             {/* Delete Confirmation Overlay */}
             {showDeleteConfirm && (
-                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-white/60 backdrop-blur-sm">
-                    <div className="bg-white card p-6 text-center space-y-4 max-w-[260px] shadow-xl">
+                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-[var(--card-bg)]/60 backdrop-blur-sm">
+                    <div className="bg-[var(--card-bg)] card p-6 text-center space-y-4 max-w-[260px] shadow-xl">
                         <div className="w-10 h-10 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </div>

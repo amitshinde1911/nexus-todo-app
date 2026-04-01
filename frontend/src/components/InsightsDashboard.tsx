@@ -74,7 +74,7 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
             className={clsx(
                 "flex-1 py-1.5 rounded-md text-xs font-medium transition-all",
                 scope === id 
-                    ? "bg-gray-100 text-[var(--accent)]" 
+                    ? "bg-[var(--accent-soft)] text-[var(--accent)]" 
                     : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             )}
         >
@@ -96,7 +96,7 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
                 </div>
 
                 {/* Scope Switcher */}
-                <div className="flex p-1 bg-white border border-[var(--border)] rounded-lg w-full md:w-64">
+                <div className="flex p-1 bg-[var(--card-bg)] border border-[var(--border)] rounded-lg w-full md:w-64">
                     <ScopeTab id="today" label="Today" />
                     <ScopeTab id="week" label="Week" />
                     <ScopeTab id="month" label="Month" />
@@ -209,7 +209,7 @@ export default function InsightsDashboard({ todos, setTab }: InsightsDashboardPr
                                                 {pct}<span className="text-xs ml-0.5 opacity-20">%</span>
                                             </span>
                                         </div>
-                                        <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                                        <div className="h-1.5 w-full bg-[var(--border)] rounded-full overflow-hidden">
                                             <div 
                                                 className="h-full rounded-full transition-all duration-1000 ease-out" 
                                                 style={{ width: `${pct}%`, background: cat.color }} 

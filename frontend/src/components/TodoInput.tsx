@@ -8,16 +8,22 @@ interface TodoInputProps {
     onClose: () => void;
     onAdd: (taskData: Partial<Task>, dueDate?: string) => Promise<void>;
     selectedDate: string;
+    initialDueTime?: string;
+    initialDueDate?: string;
 }
 
-export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: TodoInputProps) {
+export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initialDueTime, initialDueDate }: TodoInputProps) {
     const { error } = useToast();
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState<Category>('Personal');
     const [priority, setPriority] = useState<Priority>('MEDIUM');
     const [dueTime, setDueTime] = useState('');
-    const [isFocused, setIsFocused] = useState(false);
+    const [localDueDate, setLocalDueDate] = useState('');
+    const [isRecurring, setIsRecurring] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
     // Reset state when opened
     useEffect(() => {
@@ -25,10 +31,12 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
             setTitle('');
             setCategory('Personal');
             setPriority('MEDIUM');
-            setDueTime('');
+            setDueTime(initialDueTime || '');
+            setLocalDueDate(initialDueDate || selectedDate || todayStr);
+            setIsRecurring(false);
             setIsSubmitting(false);
         }
-    }, [isOpen]);
+    }, [isOpen, initialDueTime, initialDueDate, selectedDate, todayStr]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,8 +58,10 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
                 title: trimmedTitle, 
                 priority, 
                 category,
-                dueTime: dueTime || null
-            }, selectedDate);
+                dueTime: dueTime || null,
+                isRecurring,
+                ...(isRecurring && { recurrenceType: 'DAILY' })
+            }, localDueDate);
             onClose();
         } catch (err) {
             error("Failed to add task.");
@@ -64,10 +74,10 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
         const times = [];
         for (let i = 0; i < 24; i++) {
             for (let m = 0; m < 60; m += 30) {
-                const hour = i === 0 ? 12 : i > 12 ? i - 12 : i;
+                const hourNum = i === 0 ? 12 : i > 12 ? i - 12 : i;
                 const ampm = i < 12 ? 'AM' : 'PM';
                 const mins = m === 0 ? '00' : '30';
-                const label = `${hour.toString().padStart(2, '0')}:${mins} ${ampm}`;
+                const label = `${hourNum.toString().padStart(2, '0')}:${mins} ${ampm}`;
                 const value = `${i.toString().padStart(2, '0')}:${mins}`;
                 times.push({ label, value });
             }
@@ -88,7 +98,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
             {/* Centered Modal */}
             <form 
                 onSubmit={handleSubmit}
-                className="relative card w-full max-w-[440px] p-8"
+                className="relative card w-[calc(100%-2rem)] md:w-full max-w-[440px] p-6 text-left md:p-8 shadow-2xl mx-auto"
             >
                 <div className="flex justify-between items-center mb-8">
                     <div className="flex flex-col">
@@ -96,7 +106,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
                             Create new task
                         </h2>
                         <span className="text-xs text-[var(--text-secondary)] mt-1">
-                            Plan your day
+                            Plan your execution
                         </span>
                     </div>
                     <button 
@@ -121,6 +131,54 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
                     <div className="h-[1px] w-full bg-[var(--border)] mt-4" />
                 </div>
 
+                {/* Date Selection Grid */}
+                <div className="mb-10">
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-4 pl-1">When should this be done?</label>
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <button
+                            type="button"
+                            onClick={() => setLocalDueDate(todayStr)}
+                            className={clsx(
+                                "h-11 rounded-xl border px-4 flex items-center gap-3 transition-all",
+                                localDueDate === todayStr 
+                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" 
+                                    : "bg-[var(--card-bg)] border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
+                            )}
+                        >
+                            <span className="text-sm font-semibold">Today</span>
+                            <span className={clsx("text-[10px] ml-auto", localDueDate === todayStr ? "text-white/60" : "text-[var(--text-secondary)]")}>
+                                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setLocalDueDate(tomorrowStr)}
+                            className={clsx(
+                                "h-11 rounded-xl border px-4 flex items-center gap-3 transition-all",
+                                localDueDate === tomorrowStr 
+                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" 
+                                    : "bg-[var(--card-bg)] border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
+                            )}
+                        >
+                            <span className="text-sm font-semibold">Tomorrow</span>
+                            <span className={clsx("text-[10px] ml-auto", localDueDate === tomorrowStr ? "text-white/60" : "text-[var(--text-secondary)]")}>
+                                {new Date(Date.now() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <input
+                            type="date"
+                            value={localDueDate}
+                            onChange={(e) => setLocalDueDate(e.target.value)}
+                            className="w-full h-11 bg-[var(--bg-main)] border border-[var(--border)] rounded-xl px-4 text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:bg-[var(--card-bg)] transition-all cursor-pointer"
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]/40">
+                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Grid Metadata Controls */}
                 <div className="grid grid-cols-2 gap-6 mb-10">
                     {/* Priority */}
@@ -129,8 +187,8 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
                         <div className="relative">
                             <select 
                                 value={priority} 
-                                onChange={(e) => setPriority(e.target.value as Priority)}
-                                className="w-full h-10 pl-3 pr-10 bg-white border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
+                                onChange={(e) => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}
+                                className="w-full h-10 pl-3 pr-10 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
                             >
                                 <option value="LOW">Low</option>
                                 <option value="MEDIUM">Medium</option>
@@ -149,7 +207,7 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
                             <select 
                                 value={dueTime} 
                                 onChange={(e) => setDueTime(e.target.value)}
-                                className="w-full h-10 pl-3 pr-10 bg-white border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
+                                className="w-full h-10 pl-3 pr-10 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
                             >
                                 <option value="">Not set</option>
                                 {timeOptions.map((t: any) => (
@@ -165,8 +223,25 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate }: Todo
                     </div>
                 </div>
 
+                {/* Recurrence Toggle */}
+                <div className="mb-10 flex items-center justify-between">
+                    <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">Repeat daily</span>
+                        <span className="text-[10px] text-[var(--text-secondary)]">Create a new task instance every day</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            className="sr-only peer" 
+                            checked={isRecurring}
+                            onChange={(e) => setIsRecurring(e.target.checked)}
+                        />
+                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent)]"></div>
+                    </label>
+                </div>
+
                 {/* Footer Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4">
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border)]">
                     <button 
                         type="button" 
                         onClick={onClose} 

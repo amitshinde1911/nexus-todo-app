@@ -8,9 +8,12 @@ interface SidebarProps {
   onNewTask: () => void;
   userName: string;
   isAdmin?: boolean;
+  isMobile?: boolean;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmin }: SidebarProps) {
+export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmin, isMobile, isOpen, onClose }: SidebarProps) {
     const { logout } = useAuth();
     
     const items = [
@@ -48,14 +51,27 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
         setTab(id);
     };
 
-    return (
-        <aside className="relative z-[100] w-[240px] min-w-[240px] h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col p-4 overflow-hidden">
-            {/* Brand */}
-            <div className="flex items-center gap-3 mb-8 px-2 cursor-pointer" onClick={() => handleTabClick('TODAY')}>
-                <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold">
-                    N
+    const sidebarClasses = clsx(
+        "h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col p-4 overflow-hidden transition-transform duration-300 z-[100]",
+        isMobile ? "fixed inset-y-0 left-0 w-[260px] shadow-2xl" : "relative w-[240px] min-w-[240px]",
+        isMobile && !isOpen ? "-translate-x-full" : "translate-x-0"
+    );
+
+    const content = (
+        <>
+            {/* Brand + Close (Mobile) */}
+            <div className="flex items-center justify-between mb-8 px-2">
+                <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleTabClick('TODAY')}>
+                    <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold">
+                        N
+                    </div>
+                    <span className="font-semibold tracking-tight text-[var(--text-primary)] text-lg italic">Nexus</span>
                 </div>
-                <span className="font-semibold tracking-tight text-[var(--text-primary)] text-lg italic">Nexus</span>
+                {isMobile && (
+                    <button onClick={onClose} className="p-1 rounded-md hover:bg-gray-200 text-[var(--text-secondary)]">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                )}
             </div>
 
             {/* New Task Button */}
@@ -137,6 +153,30 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
                     </button>
                 </div>
             </div>
+        </>
+    );
+
+    if (isMobile) {
+        return (
+            <>
+                {/* Backdrop */}
+                <div 
+                    className={clsx(
+                        "fixed inset-0 bg-black/40 backdrop-blur-sm z-50 transition-opacity duration-300",
+                        isOpen ? "opacity-100 visible" : "opacity-0 invisible"
+                    )}
+                    onClick={onClose}
+                />
+                <aside className={sidebarClasses}>
+                    {content}
+                </aside>
+            </>
+        );
+    }
+
+    return (
+        <aside className={sidebarClasses}>
+            {content}
         </aside>
     );
 }
