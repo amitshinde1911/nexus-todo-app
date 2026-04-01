@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import FocusTimer from './FocusTimer';
 import React from 'react';
 
@@ -15,6 +16,7 @@ describe('FocusTimer', () => {
         userId: 'user1',
         title: 'Test Task',
         priority: 'HIGH' as const,
+        status: 'TODO' as const,
         completed: false,
         deleted: false,
         category: 'Work' as const,
@@ -24,6 +26,8 @@ describe('FocusTimer', () => {
         updatedAt: new Date(),
         version: 1,
         estimatedMins: 25,
+        actualMins: 0,
+        repeat: 'NONE' as const,
     };
 
     beforeEach(() => {
