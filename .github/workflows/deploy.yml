@@ -41,7 +41,7 @@ jobs:
       - name: Validate deploy credentials
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ] && [ -z "$FIREBASE_SERVICE_ACCOUNT_TODO_36BBD" ] && [ -z "$FIREBASE_TOKEN" ]; then
-            echo "Missing deploy credentials. Set FIREBASE_SERVICE_ACCOUNT (recommended) or FIREBASE_TOKEN."
+            echo "Error: No deployment credentials found. Please set FIREBASE_SERVICE_ACCOUNT or FIREBASE_TOKEN in GitHub Secrets."
             exit 1
           fi
         env:
@@ -61,17 +61,12 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Validate deploy secret
-        run: |
-          if [ -z "$FIREBASE_TOKEN" ]; then
-            echo "FIREBASE_TOKEN is not set. Add it in repo Settings → Secrets and variables → Actions."
-            exit 1
-          fi
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-
       - name: Deploy
         working-directory: frontend
-        run: firebase deploy --only hosting --project todo-36bbd --non-interactive
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            unset FIREBASE_TOKEN
+          fi
+          firebase deploy --only hosting --project todo-36bbd --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
