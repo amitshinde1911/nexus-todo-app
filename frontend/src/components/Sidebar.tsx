@@ -59,16 +59,19 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
     const content = (
         <>
             {/* Brand + Close (Mobile) */}
-            <div className="flex items-center justify-between mb-8 px-2">
-                <div className="flex items-center gap-3 cursor-pointer" onClick={() => handleTabClick('TODAY')}>
-                    <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold">
+            <div className="flex items-center justify-between mb-10 px-2 pt-2">
+                <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => handleTabClick('TODAY')}>
+                    <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold shadow-lg shadow-[var(--accent)]/20 animate-pulse-slow">
                         N
                     </div>
-                    <span className="font-semibold tracking-tight text-[var(--text-primary)] text-lg italic">Nexus</span>
+                    <span className="font-bold tracking-tight text-[var(--text-primary)] text-xl italic drop-shadow-sm">Nexus</span>
                 </div>
                 {isMobile && (
-                    <button onClick={onClose} className="p-1 rounded-md hover:bg-gray-200 text-[var(--text-secondary)]">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 rounded-xl bg-gray-50 border border-[var(--border)] text-[var(--text-secondary)] active:scale-90 transition-all"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 )}
             </div>

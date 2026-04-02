@@ -36,6 +36,28 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
+  /* Safe Area Utilities */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .mb-safe {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+  .mt-safe {
+    margin-top: env(safe-area-inset-top);
+  }
+  .h-safe-screen {
+    height: 100dvh;
+  }
+
+  /* Touch Optimizations */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
   * {
     @apply border-transparent;
   }

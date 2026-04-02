@@ -19,9 +19,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect results for mobile PWA mode
+    const checkRedirect = async () => {
+      try {
+        const redirectedUser = await authService.handleRedirectResult();
+        if (redirectedUser) {
+          await authService.syncUserProfile(redirectedUser);
+          setUser(redirectedUser);
+        }
+      } catch (err) {
+        console.error("Redirect auth error:", err);
+      }
+    };
+    checkRedirect();
+
     const unsubscribe = authService.onAuthStateChange(async (firebaseUser) => {
       if (firebaseUser) {
-        // Professional Sync: Ensure Firestore doc exists
         await authService.syncUserProfile(firebaseUser);
       }
       setUser(firebaseUser);
