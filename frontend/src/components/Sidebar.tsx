@@ -1,5 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import { clsx } from '../lib/utils';
 import { useAuth } from '../hooks/useAuth';
+import { useTimerContext } from '../context/TimerContext';
 
 interface SidebarProps {
   activeTab: string;
@@ -22,7 +24,7 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
         { id: 'PLANNER', icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2v4M10 2v4M3 8h18M3 14h18M3 20h18M4 4h16c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg>
         ), label: 'Schedule' },
-        { id: 'WEEKLY', icon: (
+        { id: 'CALENDAR', icon: (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         ), label: 'Calendar' },
         { id: 'HABITS', icon: (
@@ -52,26 +54,26 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
 
     const sidebarClasses = clsx(
         "h-screen bg-[var(--bg-sidebar)] border-r border-[var(--border)] flex flex-col p-4 overflow-hidden transition-transform duration-300 z-[100]",
-        isMobile ? "fixed inset-y-0 left-0 w-[260px] shadow-2xl" : "relative w-[240px] min-w-[240px]",
+        isMobile ? "fixed inset-y-0 left-0 w-[240px] shadow-2xl" : "relative w-[220px] min-w-[220px]",
         isMobile && !isOpen ? "-translate-x-full" : "translate-x-0"
     );
 
     const content = (
         <>
             {/* Brand + Close (Mobile) */}
-            <div className="flex items-center justify-between mb-10 px-2 pt-2">
-                <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => handleTabClick('TODAY')}>
-                    <div className="w-8 h-8 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white font-bold shadow-lg shadow-[var(--accent)]/20 animate-pulse-slow">
+            <div className="flex items-center justify-between mb-8 px-2 pt-2">
+                <div className="flex items-center gap-2.5 cursor-pointer select-none group" onClick={() => handleTabClick('TODAY')}>
+                    <div className="w-6 h-6 rounded bg-[var(--accent)] flex items-center justify-center text-white font-bold text-xs">
                         N
                     </div>
-                    <span className="font-bold tracking-tight text-[var(--text-primary)] text-xl italic drop-shadow-sm">Nexus</span>
+                    <span className="font-bold tracking-tight text-[var(--text-primary)] text-lg">Nexus</span>
                 </div>
                 {isMobile && (
                     <button 
                         onClick={onClose} 
-                        className="p-2 rounded-xl bg-gray-50 border border-[var(--border)] text-[var(--text-secondary)] active:scale-90 transition-all"
+                        className="p-1.5 rounded-lg bg-[var(--hover)] text-[var(--text-secondary)] active:scale-90 transition-all"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 )}
             </div>
@@ -95,28 +97,34 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
             <nav className="flex-1 flex flex-col gap-1 relative overflow-y-auto scrollbar-hide">
                 {items.map(item => {
                     const active = activeTab === item.id;
+                    const isTimerItem = item.id === 'FOCUS';
+                    
                     return (
-                        <button
-                            key={item.id}
-                            onClick={() => handleTabClick(item.id)}
-                            className={clsx(
-                                "sidebar-item group",
-                                active && "sidebar-item-active"
-                            )}
-                        >
-                            <span className={clsx(
-                                "flex items-center justify-center transition-colors duration-200",
-                                active ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"
-                            )}>
-                                {item.icon}
-                            </span>
-                            <span className={clsx(
-                                "transition-colors duration-200",
-                                active ? "font-semibold" : "group-hover:text-[var(--text-primary)]"
-                            )}>
-                                {item.label}
-                            </span>
-                        </button>
+                        <div key={item.id} className="flex items-center w-full gap-2">
+                            <button
+                                onClick={() => handleTabClick(item.id)}
+                                className={clsx(
+                                    "flex-1 sidebar-item group",
+                                    active ? "sidebar-item-active" : "hover:bg-[var(--hover)] hover:opacity-100"
+                                )}
+                            >
+                                <span className={clsx(
+                                    "flex items-center justify-center transition-colors duration-200",
+                                    active ? "text-[var(--accent)]" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
+                                )}>
+                                    {item.icon}
+                                </span>
+                                <span className={clsx(
+                                    "transition-colors duration-200",
+                                    active ? "font-semibold text-[var(--accent)]" : "group-hover:text-[var(--text-primary)]"
+                                )}>
+                                    {item.label}
+                                </span>
+                            </button>
+
+                            {/* Mini Timer Badge */}
+                            {isTimerItem && <SidebarMiniTimer />}
+                        </div>
                     )
                 })}
             </nav>
@@ -180,5 +188,37 @@ export default function Sidebar({ activeTab, setTab, onNewTask, userName, isAdmi
         <aside className={sidebarClasses}>
             {content}
         </aside>
+    );
+}
+
+function SidebarMiniTimer() {
+    const { timeLeft, isActive, activeTask, activeStep, formatTime, flashTrigger } = useTimerContext();
+    const [isFlashing, setIsFlashing] = useState(false);
+    
+    useEffect(() => {
+        if (flashTrigger > 0) {
+            setIsFlashing(true);
+            const timer = setTimeout(() => setIsFlashing(false), 600);
+            return () => clearTimeout(timer);
+        }
+    }, [flashTrigger]);
+
+    if (!isActive || timeLeft <= 0) return null;
+
+    const isFinalMinute = timeLeft <= 60;
+    const taskLabel = activeStep?.title || activeTask?.title || "Focusing...";
+
+    return (
+        <div 
+            className={clsx(
+                "sidebar-timer-badge mr-2 shrink-0",
+                isFinalMinute ? "timer-warning" : "timer-emerald",
+                isFlashing && "animate-flash-emerald"
+            )}
+            title={taskLabel}
+        >
+            <span className="tabular-nums">{formatTime(timeLeft)}</span>
+            <div className="w-1 h-1 rounded-full bg-current opacity-50 shrink-0" />
+        </div>
     );
 }

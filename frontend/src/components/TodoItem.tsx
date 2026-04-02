@@ -3,11 +3,11 @@ import { useTimer } from '../hooks/useTimer';
 import { clsx } from '../lib/utils';
 import { Task } from '../types';
 
-const PRIORITY_THEMES: Record<string, { dot: string; text: string; bg: string }> = {
-    URGENT: { dot: 'bg-red-500', text: 'text-red-500', bg: 'bg-red-50' },
-    HIGH: { dot: 'bg-orange-500', text: 'text-orange-500', bg: 'bg-orange-50' },
-    MEDIUM: { dot: 'bg-blue-500', text: 'text-blue-500', bg: 'bg-blue-50' },
-    LOW: { dot: 'bg-green-500', text: 'text-green-500', bg: 'bg-green-50' },
+const PRIORITY_THEMES: Record<string, string> = {
+    URGENT: 'tag-urgent',
+    HIGH: 'tag-orange',
+    MEDIUM: 'tag-blue',
+    LOW: 'tag-green',
 };
 
 interface TodoItemProps {
@@ -32,6 +32,11 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
     const { secondsElapsed } = useTimer(todo.status === 'IN_PROGRESS' ? todo : null);
     const liveMins = Math.floor(secondsElapsed / 60);
     const displayedMins = (todo.actualMins || 0) + liveMins;
+    const isStaple = todo.isEssential && !todo.isRitual;
+    const isProtocol = todo.isRitual;
+    const isObjective = !todo.isEssential && !todo.isRitual;
+
+    const completionTime = todo.completedAt ? new Date(todo.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null;
 
     useEffect(() => {
         if (isEditing && editInputRef.current) {
@@ -49,7 +54,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
     let subtasks: Subtask[] = [];
     try { subtasks = JSON.parse(todo.subtasksJson || '[]'); } catch (e) {}
 
-    const theme = PRIORITY_THEMES[todo.priority] || { border: 'border-white/5', dot: 'bg-muted', text: 'text-muted-foreground', bg: 'bg-[var(--card-bg)]/5' };
+    const theme = PRIORITY_THEMES[todo.priority] || 'tag-gray';
     const completedSubs = subtasks.filter(s => s.completed).length;
 
     const handleSaveEdit = () => {
@@ -102,11 +107,13 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
         <div
             title={todo.isLocked ? "Locked - Complete active task first" : undefined}
             className={clsx(
-                "group relative px-4 py-3 transition-all",
+                "group relative px-4 py-3 transition-all border-b border-[var(--border)]",
                 !todo.isLocked && "hover:bg-[var(--hover)]",
-                todo.completed && !expanded && "opacity-60",
+                todo.completed && !expanded && "opacity-50",
                 todo.isLocked && "opacity-40 grayscale select-none cursor-not-allowed",
-                todo.isExecutionMode && !todo.isLocked && !todo.completed && "bg-emerald-50/30 shadow-[inset_3px_0_0_0_#10b981]"
+                todo.isExecutionMode && !todo.isLocked && !todo.completed && "bg-[var(--accent-soft)]",
+                isStaple && "border-l-4 border-l-emerald-500 bg-emerald-50/20 dark:bg-emerald-500/5",
+                isProtocol && "border-l-4 border-l-indigo-500 bg-indigo-50/20 dark:bg-indigo-500/5"
             )}
             onClickCapture={(e) => {
                 if (todo.isLocked) { e.stopPropagation(); e.preventDefault(); }
@@ -118,14 +125,14 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                     disabled={todo.isLocked}
                     onClick={(e) => { e.stopPropagation(); if(!todo.isLocked) onToggle(todo); }}
                     className={clsx(
-                        "w-5 h-5 rounded-full border flex items-center justify-center transition-all shrink-0",
+                        "w-6 h-6 rounded-full border flex items-center justify-center transition-all shrink-0 shadow-sm",
                         todo.completed 
-                            ? "bg-[var(--accent)] border-[var(--accent)]" 
+                            ? (isStaple ? "bg-emerald-500 border-emerald-500" : isProtocol ? "bg-indigo-500 border-indigo-500" : "bg-[var(--accent)] border-[var(--accent)]")
                             : "bg-transparent border-[var(--border)] hover:border-[var(--accent)]"
                     )}
                 >
                     {todo.completed && (
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     )}
@@ -141,88 +148,64 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                                 onBlur={handleSaveEdit}
                                 onKeyDown={handleKeyDown}
                                 onClick={(e) => e.stopPropagation()}
-                                className="w-full bg-[var(--card-bg)] border border-[var(--accent)] outline-none text-sm font-medium text-[var(--text-primary)] px-2 py-0.5 rounded transition-all"
+                                className="w-full bg-[var(--card-bg)] border border-[var(--accent)] outline-none text-sm font-black text-[var(--text-primary)] px-2 py-0.5 rounded transition-all"
                             />
                         ) : (
-                            <span 
-                                onDoubleClick={(e) => { e.stopPropagation(); if(!todo.isLocked) setIsEditing(true); }}
-                                className={clsx(
-                                    "text-sm font-medium transition-all block truncate",
-                                    todo.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
-                                )}
-                            >
-                                {todo.title}
-                            </span>
-                        )}
-
-                        {/* Progress Bar (if estimated) */}
-                        {todo.estimatedMins && todo.estimatedMins > 0 && (
-                            <div className="mt-1 w-full max-w-[200px]">
-                                <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                                    <div 
-                                        className={clsx(
-                                            "h-full transition-all duration-500",
-                                            displayedMins >= todo.estimatedMins ? "bg-red-500" : "bg-blue-500"
-                                        )}
-                                        style={{ width: `${Math.min(100, (displayedMins / todo.estimatedMins) * 100)}%` }}
-                                    />
-                                </div>
-                                <div className="flex justify-between mt-0.5">
-                                    <span className={clsx(
-                                        "text-[9px] font-medium",
-                                        displayedMins >= todo.estimatedMins ? "text-red-500" : "text-blue-500"
-                                    )}>
-                                        {displayedMins}/{todo.estimatedMins}m
+                            <div className="flex flex-col">
+                                <span 
+                                    onDoubleClick={(e) => { e.stopPropagation(); if(!todo.isLocked) setIsEditing(true); }}
+                                    className={clsx(
+                                        "text-sm font-black transition-all block truncate",
+                                        todo.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
+                                    )}
+                                >
+                                    {todo.title}
+                                </span>
+                                {isStaple && todo.completed && (
+                                    <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter mt-0.5">
+                                        Log: {completionTime}
                                     </span>
-                                </div>
+                                )}
                             </div>
                         )}
 
                         <div className="flex items-center gap-3 mt-1.5">
-                            <div className="flex items-center gap-1.5">
-                                <div className={clsx("w-1.5 h-1.5 rounded-full", theme.dot)} />
-                                <span className={clsx("text-[10px] font-medium", theme.text)}>
-                                    {todo.priority.toLowerCase()}
+                            {isStaple && (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100/50 flex items-center gap-1">
+                                     <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                     Behavioral OS Staple
                                 </span>
-                            </div>
+                            )}
+
+                            {isProtocol && (
+                                <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest border border-indigo-100/50 flex items-center gap-1">
+                                     Protocol alpha
+                                </span>
+                            )}
+                            
+                            {!isStaple && !isProtocol && (
+                                 <span className={clsx("tag capitalize", todo.priority === 'URGENT' ? 'tag-urgent uppercase' : theme)}>
+                                    {todo.priority === 'URGENT' ? 'Objective' : todo.priority.toLowerCase()}
+                                </span>
+                            )}
                             
                             {todo.dueTime && (
-                                <div className="flex items-center gap-1 text-[var(--text-secondary)]">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                    <span className="text-[10px]">{todo.dueTime}</span>
+                                <div className={clsx("flex items-center gap-1 font-bold", isStaple ? "text-emerald-500/60" : "text-[var(--accent)]")}>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                    <span className="text-[10px] uppercase tracking-tighter">{isStaple ? 'Schedule' : 'Due'}, {todo.dueTime}</span>
                                 </div>
                             )}
                             
-                            {subtasks.length > 0 && (
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-1 bg-gray-100 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-[var(--accent)] transition-all" 
-                                            style={{ width: `${(completedSubs / subtasks.length) * 100}%` }} 
-                                        />
-                                    </div>
-                                    <span className="text-[10px] text-[var(--accent)]">
-                                        {completedSubs}/{subtasks.length}
-                                    </span>
-                                </div>
-                            )}
-
-                            {todo.actualMins > 0 && todo.status !== 'IN_PROGRESS' && (
-                                <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-gray-100 rounded text-[10px] font-semibold text-[var(--text-secondary)]">
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                                    {todo.actualMins}m logged
-                                </div>
-                            )}
-
-                            {todo.status === 'IN_PROGRESS' && (
-                                <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-blue-50 rounded text-[10px] font-semibold text-blue-600 animate-pulse">
+                            {/* TIMER UI for Objectives/Protocols */}
+                            {!isStaple && todo.status === 'IN_PROGRESS' && (
+                                <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-blue-50 rounded text-[10px] font-black text-blue-600 animate-pulse uppercase tracking-tighter">
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    {displayedMins}m tracking
+                                    {displayedMins}m Focused
                                 </div>
                             )}
 
-                            {todo.status === 'PAUSED' && (
-                                <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-amber-50 rounded text-[10px] font-semibold text-amber-600">
+                            {!isStaple && todo.status === 'PAUSED' && (
+                                <div className="flex items-center gap-1.5 px-1.5 py-0.5 bg-amber-50 rounded text-[10px] font-black text-amber-600 uppercase tracking-tighter">
                                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                                     {todo.actualMins}m paused
                                 </div>
@@ -230,120 +213,110 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
                         </div>
                     </div>
 
-                    <div className={clsx("flex items-center gap-2 shrink-0 transition-opacity", todo.isLocked ? "opacity-0 pointer-events-none" : "opacity-0 group-hover:opacity-100")}>
-                        {/* Start/Pause/Stop Buttons */}
-                        <div className="flex items-center gap-1">
-                            {todo.status === 'IN_PROGRESS' ? (
-                                <>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onPauseTask?.(todo.id); }}
-                                        className="w-7 h-7 rounded flex items-center justify-center bg-amber-50 text-amber-500 transition-all hover:bg-amber-100"
-                                        title="Pause tracking"
-                                    >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onStopTask?.(todo.id); }}
-                                        className="w-7 h-7 rounded flex items-center justify-center bg-emerald-50 text-emerald-500 transition-all hover:bg-emerald-100"
-                                        title="Complete task"
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    </button>
-                                </>
-                            ) : (
-                                !todo.completed && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onStartTask?.(todo.id); }}
-                                        className={clsx(
-                                            "w-7 h-7 rounded flex items-center justify-center transition-all",
-                                            todo.status === 'PAUSED' ? "bg-amber-50 text-amber-500 hover:bg-amber-100" : "text-[var(--text-secondary)] hover:bg-gray-100 hover:text-[var(--accent)]"
-                                        )}
-                                        title={todo.status === 'PAUSED' ? "Resume tracking" : "Start tracking"}
-                                    >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5"><path d="M5 3l14 9-14 9V3z"/></svg>
-                                    </button>
+                    <div className={clsx("flex items-center gap-1 shrink-0 transition-opacity", todo.isLocked ? "opacity-0 pointer-events-none" : "opacity-0 group-hover:opacity-100")}>
+                        {/* Start/Pause/Stop Buttons - HIDDEN for Essentials */}
+                        <div className="flex items-center mr-1">
+                            {!isStaple && (
+                                todo.status === 'IN_PROGRESS' ? (
+                                    <>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onPauseTask?.(todo.id); }}
+                                            className="btn-icon text-amber-500 hover:bg-amber-50"
+                                            title="Pause"
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onStopTask?.(todo.id); }}
+                                            className="btn-icon text-emerald-500 hover:bg-emerald-50"
+                                            title="Done"
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </button>
+                                    </>
+                                ) : (
+                                    !todo.completed && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onStartTask?.(todo.id); }}
+                                            className="btn-icon hover:text-[var(--accent)]"
+                                            title="Focus"
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                        </button>
+                                    )
                                 )
                             )}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true); }}
+                                className="btn-icon hover:text-red-500"
+                                title="Delete"
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
                         </div>
                         
                         <button
-                            onClick={() => setExpanded(!expanded)}
+                            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
                             className={clsx(
-                                "w-7 h-7 rounded flex items-center justify-center transition-all",
-                                expanded ? "text-[var(--accent)] bg-[var(--accent-soft)]" : "text-[var(--text-secondary)] hover:bg-gray-100"
+                                "w-6 h-6 rounded flex items-center justify-center transition-all",
+                                expanded ? "text-[var(--accent)] bg-[var(--accent-soft)]" : "text-[var(--text-secondary)] hover:bg-[var(--hover)]"
                             )}
                         >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={clsx("transition-transform", expanded && "rotate-180")}><path d="m6 9 6 6 6-6"/></svg>
                         </button>
                     </div>
                 </div>
 
-            {/* Expanded Content */}
+            {/* Expanded Content: Notion Style Progressive Disclosure */}
             <div className={clsx(
                 "overflow-hidden transition-all duration-200",
-                expanded ? "max-h-[800px] opacity-100 bg-gray-50/50" : "max-h-0 opacity-0"
+                expanded ? "max-h-[800px] opacity-100 bg-[var(--bg-sidebar)]" : "max-h-0 opacity-0"
             )}>
-                <div className="p-6 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="p-6 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {/* Subtasks Section */}
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h4 className="text-[11px] font-semibold text-[var(--text-secondary)]">Subtasks</h4>
-                                <span className="text-[10px] text-[var(--text-secondary)]/60">{completedSubs}/{subtasks.length} complete</span>
-                            </div>
-                            <div className="space-y-2">
+                            <h4 className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Subtasks</h4>
+                            <div className="space-y-1">
                                 {subtasks.map(sub => (
-                                    <div key={sub.id} className="flex items-center gap-2 group/sub w-full">
+                                    <div key={sub.id} className="flex items-center gap-2 group/sub w-full py-1">
                                         <button
                                             onClick={() => handleToggleSubtask(sub.id)}
                                             className={clsx(
                                                 "w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0",
-                                                sub.completed ? "bg-emerald-500 border-emerald-500" : "bg-[var(--card-bg)] border-[var(--border)] group-hover/sub:border-[var(--accent)]"
+                                                sub.completed ? "bg-emerald-500 border-emerald-500" : "bg-transparent border-[var(--border)]"
                                             )}
                                         >
-                                            {sub.completed && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                            {sub.completed && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                         </button>
                                         <input 
                                             type="text"
                                             value={sub.title}
                                             onChange={(e) => handleEditSubtask(sub.id, e.target.value)}
                                             className={clsx(
-                                                "w-full text-xs transition-all bg-transparent outline-none py-1 border-b border-transparent focus:border-[var(--border)]", 
+                                                "flex-1 text-xs transition-all bg-transparent outline-none py-0.5", 
                                                 sub.completed ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
                                             )}
                                         />
                                         <button 
                                             onClick={() => handleDeleteSubtask(sub.id)}
-                                            className="text-[var(--text-secondary)] hover:text-red-500 opacity-0 group-hover/sub:opacity-100 transition-opacity p-1 flex-shrink-0"
-                                            title="Delete subtask"
+                                            className="btn-icon w-6 h-6 opacity-0 group-hover/sub:opacity-100"
                                         >
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                         </button>
                                     </div>
                                 ))}
-                                <div className="pt-1">
-                                    <div className="relative flex items-center gap-2">
+                                <div className="pt-2">
+                                    <div className="flex items-center gap-2 group/add text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                                         <input
                                             type="text"
                                             value={newSubtask}
                                             onChange={e => setNewSubtask(e.target.value)}
                                             onKeyDown={handleAddSubtask}
-                                            placeholder="Add a subtask... (Press Enter)"
-                                            className="w-full bg-[var(--card-bg)] border border-[var(--border)] rounded-md px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none focus:border-[var(--accent)] transition-all"
+                                            placeholder="Add subtask"
+                                            className="bg-transparent border-none outline-none text-xs w-full placeholder:text-inherit"
                                         />
-                                        <button 
-                                            onClick={() => {
-                                                if(newSubtask.trim()) {
-                                                    const newSub = { id: crypto.randomUUID(), title: newSubtask.trim(), completed: false };
-                                                    const updated = [...subtasks, newSub];
-                                                    onUpdateMetadata(todo.id, { subtasksJson: JSON.stringify(updated) });
-                                                    setNewSubtask('');
-                                                }
-                                            }}
-                                            className="bg-[var(--accent)] text-white p-1.5 rounded flex items-center justify-center flex-shrink-0 hover:bg-red-700 transition-colors"
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -351,13 +324,13 @@ export default function TodoItem({ todo, onToggle, onDelete, onUpdateMetadata, o
 
                         {/* Notes Section */}
                         <div className="space-y-4">
-                            <h4 className="text-[11px] font-semibold text-[var(--text-secondary)]">Notes</h4>
+                            <h4 className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider">Notes</h4>
                             <textarea
                                 value={notes}
                                 onChange={e => setNotes(e.target.value)}
                                 onBlur={handleNotesBlur}
-                                placeholder="Thoughts, details, or contexts..."
-                                className="w-full min-h-[120px] bg-[var(--card-bg)] border border-[var(--border)] rounded-md p-3 text-xs leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none focus:border-[var(--accent)] transition-all resize-none"
+                                placeholder="Empty"
+                                className="w-full min-h-[100px] bg-transparent border-none p-0 text-xs leading-relaxed text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 outline-none resize-none"
                             />
                         </div>
                     </div>
