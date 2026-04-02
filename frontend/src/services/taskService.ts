@@ -19,15 +19,26 @@ const COLLECTION_NAME = "tasks";
 export const taskService = {
   createTask: async (userId: string, taskData: Partial<Task>) => {
     const taskRef = doc(collection(db, `users/${userId}/${COLLECTION_NAME}`));
-    const newTask: Partial<Task> = {
-      ...taskData,
-      id: taskRef.id,
-      userId,
+    const newTask: any = {
+      title: taskData.title || "Untitled Objective",
+      category: taskData.category || "Personal",
+      priority: taskData.priority || "MEDIUM",
       completed: false,
       deleted: false,
       status: 'TODO',
       actualMins: 0,
       repeat: 'NONE',
+      isEssential: false,
+      isRitual: false,
+      subtasksJson: "[]",
+      notes: "",
+      dueDate: new Date().toISOString().split('T')[0],
+      dueTime: "",
+      isRecurring: false,
+      recurrenceType: 'NONE',
+      ...taskData,
+      id: taskRef.id,
+      userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       version: 1

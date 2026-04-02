@@ -10,16 +10,23 @@ interface TodoInputProps {
     selectedDate: string;
     initialDueTime?: string;
     initialDueDate?: string;
+    initialIsEssential?: boolean;
 }
 
-export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initialDueTime, initialDueDate }: TodoInputProps) {
+type InputMode = 'OBJECTIVE' | 'STAPLE' | 'PROTOCOL';
+
+export default function TodoInput({ 
+    isOpen, onClose, onAdd, selectedDate, initialDueTime, initialDueDate, initialIsEssential = false 
+}: TodoInputProps) {
     const { error } = useToast();
+    const [mode, setMode] = useState<InputMode>('OBJECTIVE');
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState<Category>('Personal');
     const [priority, setPriority] = useState<Priority>('MEDIUM');
     const [dueTime, setDueTime] = useState('');
     const [localDueDate, setLocalDueDate] = useState('');
     const [isRecurring, setIsRecurring] = useState(false);
+    const [isEssential, setIsEssential] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -29,29 +36,55 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
     useEffect(() => {
         if (isOpen) {
             setTitle('');
-            setCategory('Personal');
             setPriority('MEDIUM');
             setDueTime(initialDueTime || '');
             setLocalDueDate(initialDueDate || selectedDate || todayStr);
-            setIsRecurring(false);
             setIsSubmitting(false);
+
+            if (initialIsEssential) {
+                setMode('STAPLE');
+                setCategory('Habit');
+                setIsRecurring(true);
+                setIsEssential(true);
+            } else {
+                setMode('OBJECTIVE');
+                setCategory('Personal');
+                setIsRecurring(false);
+                setIsEssential(false);
+            }
         }
-    }, [isOpen, initialDueTime, initialDueDate, selectedDate, todayStr]);
+    }, [isOpen, initialDueTime, initialDueDate, selectedDate, todayStr, initialIsEssential]);
+
+    // Handle Mode Change
+    const handleModeChange = (newMode: InputMode) => {
+        setMode(newMode);
+        if (newMode === 'STAPLE') {
+            setCategory('Habit');
+            setIsRecurring(true);
+            setIsEssential(true);
+            setPriority('LOW');
+        } else if (newMode === 'PROTOCOL') {
+            setCategory('Habit');
+            setIsRecurring(true);
+            setIsEssential(true);
+            setPriority('URGENT');
+        } else {
+            setCategory('Personal');
+            setIsRecurring(false);
+            setIsEssential(false);
+            setPriority('MEDIUM');
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedTitle = title.trim();
         
         if (!trimmedTitle) {
-            error("Task title cannot be empty.");
+            error("Title cannot be empty.");
             return;
         }
         
-        if (trimmedTitle.length < 3) {
-            error("Task title needs to be at least 3 characters.");
-            return;
-        }
-
         setIsSubmitting(true);
         try {
             await onAdd({ 
@@ -60,11 +93,13 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                 category,
                 dueTime: dueTime || null,
                 isRecurring,
+                isEssential,
+                isRitual: mode === 'PROTOCOL',
                 ...(isRecurring && { recurrenceType: 'DAILY' })
             }, localDueDate);
             onClose();
         } catch (err) {
-            error("Failed to add task.");
+            error("Failed to deploy objective.");
         } finally {
             setIsSubmitting(false);
         }
@@ -98,15 +133,34 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
             {/* Centered Modal */}
             <form 
                 onSubmit={handleSubmit}
-                className="relative card w-[calc(100%-2rem)] md:w-full max-w-[440px] p-6 text-left md:p-8 shadow-2xl mx-auto"
+                className="relative bg-[var(--bg-main)] border border-[var(--border)] rounded-[var(--radius)] w-[calc(100%-2rem)] md:w-full max-w-[440px] p-6 text-left md:p-8 shadow-sm animate-slide-up mx-auto h-[600px] overflow-y-auto custom-scrollbar"
             >
-                <div className="flex justify-between items-center mb-8">
+                {/* MODE SELECTOR */}
+                <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl mb-8">
+                    {(['OBJECTIVE', 'STAPLE', 'PROTOCOL'] as InputMode[]).map(m => (
+                        <button
+                            key={m}
+                            type="button"
+                            onClick={() => handleModeChange(m)}
+                            className={clsx(
+                                "flex-1 py-2 px-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                                mode === m 
+                                    ? "bg-white dark:bg-gray-700 text-[var(--text-primary)] shadow-sm" 
+                                    : "text-[var(--text-secondary)] opacity-40 hover:opacity-100"
+                            )}
+                        >
+                            {m}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="flex justify-between items-start mb-6">
                     <div className="flex flex-col">
-                        <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">
-                            Create new task
+                        <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
+                            {mode === 'OBJECTIVE' ? 'New Mission Objective' : mode === 'STAPLE' ? 'Define Life Staple' : 'Register Protocol'}
                         </h2>
-                        <span className="text-xs text-[var(--text-secondary)] mt-1">
-                            Plan your execution
+                        <span className="text-[11px] font-medium text-[var(--text-secondary)] mt-0.5">
+                            {mode === 'OBJECTIVE' ? 'Timed execution for project goals' : mode === 'STAPLE' ? 'Daily maintenance habit tracking' : 'Structured sequence for rituals'}
                         </span>
                     </div>
                     <button 
@@ -119,142 +173,132 @@ export default function TodoInput({ isOpen, onClose, onAdd, selectedDate, initia
                 </div>
 
                 {/* Title Input */}
-                <div className="mb-8">
+                <div className="mb-6">
                     <input 
                         type="text" 
                         value={title} 
                         onChange={(e) => setTitle(e.target.value)} 
-                        placeholder="What needs to be done?"
+                        placeholder={mode === 'STAPLE' ? "e.g. Wake up, Hydrate" : "Objective name"}
                         autoFocus
-                        className="w-full bg-transparent border-none text-xl font-medium text-[var(--text-primary)] placeholder-[var(--text-secondary)]/20 outline-none p-0"
+                        className="w-full bg-transparent border-none text-xl font-semibold text-[var(--text-primary)] placeholder-[var(--text-secondary)]/15 outline-none p-0"
                     />
                     <div className="h-[1px] w-full bg-[var(--border)] mt-4" />
                 </div>
 
-                {/* Date Selection Grid */}
-                <div className="mb-10">
-                    <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-4 pl-1">When should this be done?</label>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        <button
-                            type="button"
-                            onClick={() => setLocalDueDate(todayStr)}
-                            className={clsx(
-                                "h-11 rounded-xl border px-4 flex items-center gap-3 transition-all",
-                                localDueDate === todayStr 
-                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" 
-                                    : "bg-[var(--card-bg)] border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
-                            )}
-                        >
-                            <span className="text-sm font-semibold">Today</span>
-                            <span className={clsx("text-[10px] ml-auto", localDueDate === todayStr ? "text-white/60" : "text-[var(--text-secondary)]")}>
-                                {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setLocalDueDate(tomorrowStr)}
-                            className={clsx(
-                                "h-11 rounded-xl border px-4 flex items-center gap-3 transition-all",
-                                localDueDate === tomorrowStr 
-                                    ? "bg-[var(--accent)] border-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20" 
-                                    : "bg-[var(--card-bg)] border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent)]"
-                            )}
-                        >
-                            <span className="text-sm font-semibold">Tomorrow</span>
-                            <span className={clsx("text-[10px] ml-auto", localDueDate === tomorrowStr ? "text-white/60" : "text-[var(--text-secondary)]")}>
-                                {new Date(Date.now() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <input
-                            type="date"
-                            value={localDueDate}
-                            onChange={(e) => setLocalDueDate(e.target.value)}
-                            className="w-full h-11 bg-[var(--bg-main)] border border-[var(--border)] rounded-xl px-4 text-xs font-medium text-[var(--text-primary)] outline-none focus:border-[var(--accent)] focus:bg-[var(--card-bg)] transition-all cursor-pointer"
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]/40">
-                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Grid Metadata Controls */}
-                <div className="grid grid-cols-2 gap-6 mb-10">
-                    {/* Priority */}
-                    <div className="group">
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-2 pl-1">Priority</label>
-                        <div className="relative">
-                            <select 
-                                value={priority} 
-                                onChange={(e) => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}
-                                className="w-full h-10 pl-3 pr-10 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
-                            >
-                                <option value="LOW">Low</option>
-                                <option value="MEDIUM">Medium</option>
-                                <option value="URGENT">High</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]/40">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                {/* OBJECTIVE SPECIFIC: Date & Priority */}
+                {mode === 'OBJECTIVE' && (
+                    <>
+                        <div className="mb-8">
+                            <label className="block text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Timing</label>
+                            <div className="grid grid-cols-2 gap-2 mb-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setLocalDueDate(todayStr)}
+                                    className={clsx(
+                                        "h-9 rounded-md border px-3 flex items-center justify-between transition-all",
+                                        localDueDate === todayStr 
+                                            ? "bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-main)]" 
+                                            : "bg-transparent border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--hover)]"
+                                    )}
+                                >
+                                    <span className="text-xs font-semibold">Today</span>
+                                    <span className={clsx("text-[10px]", localDueDate === todayStr ? "opacity-60" : "text-[var(--text-secondary)]")}>
+                                        {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setLocalDueDate(tomorrowStr)}
+                                    className={clsx(
+                                        "h-9 rounded-md border px-3 flex items-center justify-between transition-all",
+                                        localDueDate === tomorrowStr 
+                                            ? "bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--bg-main)]" 
+                                            : "bg-transparent border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--hover)]"
+                                    )}
+                                >
+                                    <span className="text-xs font-semibold">Tomorrow</span>
+                                    <span className={clsx("text-[10px]", localDueDate === tomorrowStr ? "opacity-60" : "text-[var(--text-secondary)]")}>
+                                        {new Date(Date.now() + 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    </span>
+                                </button>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Time Dropdown */}
-                    <div className="group">
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-2 pl-1">Due time</label>
-                        <div className="relative">
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="group">
+                                <label className="block text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Priority</label>
+                                <select 
+                                    value={priority} 
+                                    onChange={(e) => setPriority(e.target.value as any)}
+                                    className="w-full h-9 px-3 bg-transparent border border-[var(--border)] rounded-md text-xs font-semibold text-[var(--text-primary)] outline-none focus:bg-[var(--hover)] transition-all cursor-pointer"
+                                >
+                                    <option value="LOW">Low</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="URGENT">High</option>
+                                </select>
+                            </div>
+
+                            <div className="group">
+                                <label className="block text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Target Time</label>
+                                <select 
+                                    value={dueTime} 
+                                    onChange={(e) => setDueTime(e.target.value)}
+                                    className="w-full h-9 px-3 bg-transparent border border-[var(--border)] rounded-md text-xs font-semibold text-[var(--text-primary)] outline-none focus:bg-[var(--hover)] transition-all cursor-pointer"
+                                >
+                                    <option value="">Not set</option>
+                                    {timeOptions.map((t: any) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </>
+                )}
+
+                {/* STAPLE / PROTOCOL SPECIFIC: Time & Recurrence */}
+                {mode !== 'OBJECTIVE' && (
+                    <div className="space-y-6 mb-8">
+                        <div className="group">
+                            <label className="block text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Execution Time</label>
                             <select 
                                 value={dueTime} 
                                 onChange={(e) => setDueTime(e.target.value)}
-                                className="w-full h-10 pl-3 pr-10 bg-[var(--card-bg)] border border-[var(--border)] rounded-md text-xs font-medium text-[var(--text-primary)] appearance-none focus:border-[var(--accent)] outline-none transition-all cursor-pointer"
+                                className="w-full h-11 px-4 bg-[var(--hover)] border border-[var(--border)] rounded-xl text-sm font-bold text-[var(--text-primary)] outline-none focus:border-[var(--text-primary)] transition-all cursor-pointer"
                             >
-                                <option value="">Not set</option>
-                                {timeOptions.map((t: any) => (
-                                    <option key={t.value} value={t.value}>
-                                        {t.label}
-                                    </option>
-                                ))}
+                                <option value="">Not set (Flexible)</option>
+                                {timeOptions.map((t: any) => <option key={t.value} value={t.value}>{t.label}</option>)}
                             </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]/40">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <p className="text-[10px] text-[var(--text-secondary)] mt-2 italic">Captured as the baseline for your Behavioral Audit.</p>
+                        </div>
+
+                        <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-100/50 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-black text-emerald-700 uppercase tracking-tight">Active Discipline</p>
+                                    <p className="text-[10px] text-emerald-600/70 font-medium">Daily recurrence & Fidelity tracking enabled.</p>
+                                </div>
                             </div>
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         </div>
                     </div>
-                </div>
-
-                {/* Recurrence Toggle */}
-                <div className="mb-10 flex items-center justify-between">
-                    <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-[var(--text-primary)]">Repeat daily</span>
-                        <span className="text-[10px] text-[var(--text-secondary)]">Create a new task instance every day</span>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            className="sr-only peer" 
-                            checked={isRecurring}
-                            onChange={(e) => setIsRecurring(e.target.checked)}
-                        />
-                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--accent)]"></div>
-                    </label>
-                </div>
+                )}
 
                 {/* Footer Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border)]">
+                <div className="flex items-center justify-end gap-2 mt-4">
                     <button 
                         type="button" 
                         onClick={onClose} 
-                        className="btn-secondary px-6"
+                        className="btn-ghost px-4"
                     >
                         Cancel
                     </button>
                     <button 
                         type="submit" 
                         disabled={!title.trim() || isSubmitting}
-                        className="btn-primary px-8"
+                        className="btn-primary px-6"
                     >
-                        {isSubmitting ? 'Saving...' : 'Create task'}
+                        {isSubmitting ? 'Saving...' : 'Create objctive'}
                     </button>
                 </div>
             </form>

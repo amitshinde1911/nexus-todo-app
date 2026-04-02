@@ -13,6 +13,17 @@ export interface User {
   lastLogin?: any;
 }
 
+export interface ProtocolStep {
+  id: string;
+  title: string; // maps to 'label' in user spec
+  status: 'pending' | 'completed' | 'deferred';
+  isFlexible: boolean;
+  originalOrder: number;
+  duration?: number;
+  completedAt: string | null;
+  deferredAt: string | null;
+}
+
 export interface Task {
   id: string;
   userId: string;
@@ -55,6 +66,7 @@ export interface Task {
 
   // Ritual Engine
   isRitual?: boolean;
+  isEssential?: boolean;
 }
 
 export interface Habit extends Task {

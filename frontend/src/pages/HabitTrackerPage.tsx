@@ -24,7 +24,10 @@ export default function HabitTrackerPage({ setTab }: HabitProps) {
     }, [tasks, todayStr]);
 
     const activeProtocolsToday = useMemo(() => {
-        return rituals.filter(t => !t.deleted && t.dueDate === todayStr && !t.completed);
+        const unique = new Map();
+        rituals.filter(t => !t.deleted && t.dueDate === todayStr && !t.completed)
+               .forEach(r => { if (!unique.has(r.title)) unique.set(r.title, r); });
+        return Array.from(unique.values());
     }, [rituals, todayStr]);
 
     const routineTemplates = useMemo(() => {
@@ -137,8 +140,17 @@ export default function HabitTrackerPage({ setTab }: HabitProps) {
                                                 <span className="text-sm font-semibold tracking-wider text-emerald-50">Active Focus Mode</span>
                                             </div>
                                             <h3 className="text-3xl font-bold tracking-tight mb-2">{ritual.title}</h3>
+                                            
+                                            {/* Mini Progress Track */}
+                                            <div className="w-full max-w-[200px] h-1.5 bg-white/20 rounded-full overflow-hidden mb-4">
+                                                <div 
+                                                    className="h-full bg-white transition-all duration-700 ease-out shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                                                    style={{ width: `${steps.length > 0 ? (steps.filter((s:any) => s.status === 'completed').length / steps.length) * 100 : 0}%` }}
+                                                />
+                                            </div>
+
                                             <div className="flex items-center gap-2 cursor-pointer bg-black/20 rounded-lg px-3 py-1.5 w-fit">
-                                                <span className="text-xs font-bold text-white">Step {completedSteps} / {steps.length > 0 ? steps.length : '?'}</span>
+                                                <span className="text-xs font-bold text-white">Step {steps.filter((s:any) => s.status === 'completed').length} / {steps.length}</span>
                                             </div>
                                         </div>
                                         <button 
@@ -151,8 +163,17 @@ export default function HabitTrackerPage({ setTab }: HabitProps) {
                                             }}
                                             className="bg-white hover:bg-emerald-50 text-emerald-700 px-8 py-4 rounded-xl font-bold transition-all transform hover:-translate-y-1 shadow-xl flex items-center gap-3 w-fit md:w-auto shrink-0 justify-center"
                                         >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-                                            Continue Engine
+                                            {steps.some((s:any) => s.status === 'deferred') ? (
+                                                <>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                                    Resume Engine
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+                                                    Continue Engine
+                                                </>
+                                            )}
                                         </button>
                                     </div>
                                 </div>
@@ -270,6 +291,84 @@ export default function HabitTrackerPage({ setTab }: HabitProps) {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Master Habit: Morning Protocol (if active) */}
+                    {activeProtocolsToday.map(ritual => {
+                        let steps = [];
+                        try { steps = JSON.parse(ritual.subtasksJson || '[]'); } catch(e) {}
+                        return (
+                            <div key={`master-${ritual.id}`} className="md:col-span-2 group">
+                                <div className="card border-l-4 border-[var(--accent)] bg-gradient-to-r from-[var(--accent-soft)]/10 to-transparent p-0 overflow-hidden">
+                                    <div className="p-4 flex items-center justify-between border-b border-[var(--border)] border-dashed bg-white/50 dark:bg-black/10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse" />
+                                            <span className="text-[10px] font-bold text-[var(--accent)] uppercase tracking-widest">Master Protocol active</span>
+                                        </div>
+                                        <span className="text-[10px] font-medium text-[var(--text-secondary)] italic">Sequence engaged</span>
+                                    </div>
+                                    <div className="p-6">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                            <div className="flex-1">
+                                                <h3 className="text-xl font-bold text-[var(--text-primary)]">{ritual.title}</h3>
+                                                <div className="mt-4 space-y-4 relative pl-8">
+                                                    {/* Glowing Thicker Sequence Line */}
+                                                    <div className="absolute left-[7px] top-2 bottom-2 w-[8px] bg-emerald-500/10 blur-[2px] rounded-full" />
+                                                    <div className="absolute left-[10px] top-2 bottom-2 w-[2px] bg-gradient-to-b from-emerald-500 via-emerald-400 to-transparent" />
+                                                    
+                                                    {steps.sort((a: any, b: any) => {
+                                                        // Sorting Logic: pending -> completed -> deferred
+                                                        const score = (s: any) => s.status === 'deferred' ? 2 : (s.status === 'completed' ? 1 : 0);
+                                                        if (score(a) !== score(b)) return score(a) - score(b);
+                                                        return (a.originalOrder || 0) - (b.originalOrder || 0);
+                                                    }).map((step: any, idx: number) => (
+                                                        <div key={idx} className={clsx(
+                                                            "flex items-center gap-4 group/step transition-opacity",
+                                                            step.status === 'deferred' && "opacity-50"
+                                                        )}>
+                                                            <div className={clsx(
+                                                                "w-5 h-5 rounded-full border-2 z-10 flex items-center justify-center transition-all",
+                                                                step.status === 'completed' 
+                                                                    ? "bg-emerald-500 border-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" 
+                                                                    : (step.status === 'deferred' 
+                                                                        ? "bg-amber-400 border-amber-400" 
+                                                                        : "bg-[var(--bg-main)] border-[var(--border)] group-hover/step:border-emerald-500")
+                                                            )}>
+                                                                {step.status === 'completed' && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><path d="M20 6L9 17l-5-5"/></svg>}
+                                                                {step.status === 'deferred' && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className={clsx(
+                                                                    "text-sm font-bold transition-all",
+                                                                    step.status === 'completed' ? "text-[var(--text-secondary)] line-through" : "text-[var(--text-primary)]"
+                                                                )}>
+                                                                    {step.title}
+                                                                </span>
+                                                                {step.status === 'deferred' && (
+                                                                    <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Deferred to later</span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={() => {
+                                                    if (setTab) {
+                                                        if (ritual.status !== 'IN_PROGRESS') updateTask(ritual.id, { status: 'IN_PROGRESS' });
+                                                        setTab('FOCUS');
+                                                    }
+                                                }}
+                                                className="btn-primary shadow-lg shadow-[var(--accent)]/20 hover:shadow-[var(--accent)]/40 px-8 py-3 h-auto text-sm font-bold flex items-center gap-2 group-hover:scale-[1.02] transition-all"
+                                            >
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg> 
+                                                Resume Engine
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+
                     {activeHabits.map(habit => (
                         <div 
                             key={habit.id}
@@ -296,10 +395,39 @@ export default function HabitTrackerPage({ setTab }: HabitProps) {
                             )}>
                                 {habit.title}
                             </h3>
+
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateTask(habit.id, { isEssential: !habit.isEssential });
+                                }}
+                                className={clsx(
+                                    "px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter transition-all",
+                                    habit.isEssential 
+                                        ? "bg-emerald-500 text-white" 
+                                        : "bg-gray-100 text-[var(--text-secondary)] hover:bg-gray-200"
+                                )}
+                            >
+                                {habit.isEssential ? 'Essential' : 'Pin to Rail'}
+                            </button>
                         </div>
                     ))}
 
-                    <div className="card p-4 border-dashed cursor-pointer hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/10 transition-all flex items-center gap-4 bg-[var(--bg-main)]">
+                    <div 
+                        onClick={() => {
+                            const title = prompt("New habit title:");
+                            if (title && addTask) {
+                                addTask({
+                                    title,
+                                    category: 'Habit',
+                                    priority: 'LOW',
+                                    isRecurring: true,
+                                    recurrenceType: 'DAILY'
+                                });
+                            }
+                        }}
+                        className="card p-4 border-dashed cursor-pointer hover:border-[var(--accent)] hover:bg-[var(--accent-soft)]/10 transition-all flex items-center gap-4 bg-[var(--bg-main)]"
+                    >
                          <div className="w-6 h-6 border-2 border-dashed border-[var(--text-secondary)]/30 rounded flex items-center justify-center text-[var(--text-secondary)]">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                          </div>

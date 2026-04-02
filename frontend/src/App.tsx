@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthContext } from './context/AuthContext';
+import { TimerProvider } from './context/TimerContext';
+import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { useToast } from './components/ToastProvider';
 import { useTasks } from './hooks/useTasks';
 import Sidebar from './components/Sidebar';
@@ -11,9 +13,10 @@ const DashboardPage = lazy(() => import('./pages/DashboardPage')) as React.Compo
 const HabitTrackerPage = lazy(() => import('./pages/HabitTrackerPage')) as React.ComponentType<{ setTab?: (t: string) => void }>;
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const FocusTimer = lazy(() => import('./components/FocusTimer')) as React.ComponentType<any>;
-const InsightsDashboard = lazy(() => import('./components/InsightsDashboard')) as React.ComponentType<{ todos: any[]; setTab: (t: string) => void }>;
+const InsightsDashboard = lazy(() => import('./components/InsightsDashboard')) as React.ComponentType<{ setTab: (t: string) => void }>;
 const DailyPlanner = lazy(() => import('./components/DailyPlanner')) as React.ComponentType<{ todos: any[]; selectedDate: string; onUpdateMetadata: (id: string, updates: any) => void; onStartTask?: (id: string) => void; onPauseTask?: (id: string) => void; onStopTask?: (id: string) => void; onCreateInSlot?: (date: string, time: string) => void }>;
 const WeeklyCalendar = lazy(() => import('./components/WeeklyCalendar')) as React.ComponentType<{ selectedDate: string; onSelectDate: (d: string) => void; onCreateInDate?: (date: string) => void }>;
+const CalendarPage = lazy(() => import('./pages/CalendarPage')) as React.ComponentType<{ setTab: (t: string) => void }>;
 const TrashPage = lazy(() => import('./pages/TrashPage')) as React.ComponentType<any>;
 
 import TodoInput from './components/TodoInput';
@@ -133,6 +136,12 @@ const AppContent: React.FC = () => {
                 </div>
               )}
 
+              {tab === 'CALENDAR' && (
+                <div className="animate-fade-in">
+                  <CalendarPage setTab={setTab} />
+                </div>
+              )}
+
               {tab === 'FOCUS' && (
                 <div className="max-w-xl mx-auto h-full flex items-center justify-center animate-scale-in py-12">
                   <FocusTimer 
@@ -154,7 +163,7 @@ const AppContent: React.FC = () => {
 
               {tab === 'INSIGHTS' && (
                 <div className="animate-fade-in">
-                  <InsightsDashboard todos={tasks} setTab={setTab} />
+                  <InsightsDashboard setTab={setTab} />
                 </div>
               )}
 
@@ -228,7 +237,20 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  return <AppContent />;
+  return (
+    <TimerProvider>
+      <TaskProviderWrapper />
+    </TimerProvider>
+  );
+};
+
+const TaskProviderWrapper: React.FC = () => {
+  const { user } = useAuthContext();
+  return (
+    <TaskProvider userId={user?.uid}>
+      <AppContent />
+    </TaskProvider>
+  );
 };
 
 export default App;
