@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "todo-36bbd"
-  }
+  },
+  "targets": {
+    "todo-36bbd": {
+      "hosting": {
+        "production": [
+          "todo-36bbd"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
