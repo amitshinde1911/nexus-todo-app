@@ -5,6 +5,8 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   User as FirebaseUser
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -72,7 +74,17 @@ export const authService = {
   loginWithGoogle: async () => {
     try {
       const provider = new GoogleAuthProvider();
-      return await signInWithPopup(auth, provider);
+      // Use redirect for mobile PWA context
+      return await signInWithRedirect(auth, provider);
+    } catch (err: any) {
+      throw new Error(mapAuthError(err.code));
+    }
+  },
+
+  handleRedirectResult: async () => {
+    try {
+      const result = await getRedirectResult(auth);
+      return result?.user || null;
     } catch (err: any) {
       throw new Error(mapAuthError(err.code));
     }

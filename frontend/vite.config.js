@@ -15,7 +15,7 @@ export default defineConfig({
       ],
     },
   },
-  base: './',
+  base: '/',
   build: {
     rollupOptions: {
       output: {
