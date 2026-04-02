@@ -50,10 +50,13 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Authenticate to Google Cloud
-        if: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' || secrets.FIREBASE_SERVICE_ACCOUNT_TODO_36BBD != '' }}
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          SERVICE_ACCOUNT_PROJECT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TODO_36BBD }}
+        if: env.SERVICE_ACCOUNT != '' || env.SERVICE_ACCOUNT_PROJECT != ''
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' && secrets.FIREBASE_SERVICE_ACCOUNT || secrets.FIREBASE_SERVICE_ACCOUNT_TODO_36BBD }}
+          credentials_json: ${{ env.SERVICE_ACCOUNT != '' && env.SERVICE_ACCOUNT || env.SERVICE_ACCOUNT_PROJECT }}
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
