@@ -63,6 +63,10 @@ jobs:
 
       - name: Deploy
         working-directory: frontend
-        run: firebase deploy --only hosting --project todo-36bbd --non-interactive
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            unset FIREBASE_TOKEN
+          fi
+          firebase deploy --only hosting --project todo-36bbd --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
